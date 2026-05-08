@@ -1,0 +1,63 @@
+[project]
+name = "fencer-skills-tooling"
+version = "0.0.0"
+description = "Dev tooling for the Fencer skills marketplace. Skill scripts are PEP-723 self-contained — this project only declares dev dependencies."
+requires-python = ">=3.14"
+license = "Apache-2.0"
+
+[dependency-groups]
+dev = [
+  "ruff>=0.15",
+  "jsonschema>=4.23",
+  "pytest>=8",
+  "pyyaml>=6",
+  "pre-commit>=4",
+]
+
+[tool.ruff]
+exclude = [".git", ".mypy_cache", ".ruff_cache", "node_modules", ".venv"]
+line-length = 120
+indent-width = 4
+target-version = "py314"
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+# Selected lint rules (matches app/pyproject.toml):
+# - blind-except (BLE)
+# - defaults (E4, E7, E9, F)
+# - logging-format (G)
+# - isort (I)
+# - flake8-gettext (INT)
+# - logging (LOG)
+# - flake8-tidy-imports (TID)
+# - pyupgrade (UP)
+# - import-outside-toplevel (PLC0415)
+select = [
+  "BLE",
+  "E4",
+  "E7",
+  "E9",
+  "F",
+  "G",
+  "I",
+  "INT",
+  "LOG",
+  "TID",
+  "UP",
+  "PLC0415",
+]
+unfixable = []
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.uv]
+python-preference = "managed"
+default-groups = ["dev"]
+exclude-newer = "7 days"

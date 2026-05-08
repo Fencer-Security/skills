@@ -1,0 +1,55 @@
+name: test-skills
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+permissions:
+    contents: read
+
+jobs:
+    python-scripts:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: astral-sh/setup-uv@v3
+              with:
+                  enable-cache: true
+            - name: Compile-check every PEP-723 script
+              shell: bash
+              run: |
+                  shopt -s globstar nullglob
+                  fail=0
+                  for script in plugins/**/scripts/*.py; do
+                    echo "::group::$script"
+                    if ! uv run --script "$script" --help >/dev/null 2>&1; then
+                      # Fall back to syntax-only check; --help may not be supported
+                      if ! python3 -m py_compile "$script"; then
+                        echo "::error file=$script::failed to compile"
+                        fail=1
+                      fi
+                    fi
+                    echo "::endgroup::"
+                  done
+                  exit $fail
+
+    typescript-scripts:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: oven-sh/setup-bun@v2
+            - name: Type-check every TS script
+              shell: bash
+              run: |
+                  shopt -s globstar nullglob
+                  fail=0
+                  for script in plugins/**/scripts/*.ts; do
+                    echo "::group::$script"
+                    if ! bun build --target=bun --outfile=/tmp/out.js "$script" >/dev/null; then
+                      echo "::error file=$script::failed to type-check"
+                      fail=1
+                    fi
+                    echo "::endgroup::"
+                  done
+                  exit $fail

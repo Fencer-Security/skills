@@ -1,0 +1,22 @@
+{
+  "name": "vibe-app-audit",
+  "description": "Security audit skills for AI-generated web apps (Lovable, v0, Bolt, Cursor output).",
+  "version": "0.1.0",
+  "author": {
+    "name": "Fencer",
+    "url": "https://fencer.dev"
+  },
+  "homepage": "https://github.com/Fencer-Security/skills/tree/main/plugins/vibe-app-audit",
+  "license": "Apache-2.0",
+  "keywords": [
+    "security",
+    "audit",
+    "vibe-coding",
+    "supabase",
+    "rls",
+    "lovable",
+    "v0",
+    "bolt",
+    "cursor"
+  ]
+}

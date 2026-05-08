@@ -1,0 +1,20 @@
+{
+  "name": "compliance",
+  "description": "SOC 2 vendor diligence and related compliance review skills.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Fencer",
+    "url": "https://fencer.dev"
+  },
+  "homepage": "https://github.com/Fencer-Security/skills/tree/main/plugins/compliance",
+  "license": "Apache-2.0",
+  "keywords": [
+    "compliance",
+    "soc2",
+    "vendor-diligence",
+    "vendor-review",
+    "grc",
+    "third-party-risk",
+    "security-questionnaire"
+  ]
+}

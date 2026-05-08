@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "fencer",
+  "owner": {
+    "name": "Fencer",
+    "url": "https://fencer.dev"
+  },
+  "description": "Fencer's public marketplace of Claude Code and Codex skills: Fencer CLI/MCP integrations, compliance workflows, and security review tooling.",
+  "plugins": [
+    {
+      "name": "vibe-app-audit",
+      "source": "./plugins/vibe-app-audit",
+      "description": "Security audit skills for AI-generated web apps (Lovable, v0, Bolt, Cursor output)."
+    },
+    {
+      "name": "compliance",
+      "source": "./plugins/compliance",
+      "description": "SOC 2 vendor diligence and related compliance review skills."
+    }
+  ]
+}

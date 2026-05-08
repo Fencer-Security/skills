@@ -1,0 +1,58 @@
+[settings]
+idiomatic_version_file_enable_tools = ["bun"]
+
+[task_config]
+includes = ["scripts"]
+
+[tasks.sync-python]
+description = "Sync Python dependencies via uv"
+run = "uv sync"
+
+[tasks.sync-bun]
+description = "Install bun dependencies"
+run = "bun install"
+
+[tasks.sync-precommit]
+description = "Install pre-commit hooks"
+run = "uv run pre-commit install --install-hooks"
+
+[tasks.sync-all]
+description = "Sync Python, bun, and pre-commit"
+depends = ["sync-python", "sync-bun", "sync-precommit"]
+
+[tasks.lint]
+description = "Run all linters (ruff, oxlint, oxfmt --check)"
+run = """
+uv run ruff check .
+uv run ruff format --check .
+bun run lint
+bun run format:check
+"""
+
+[tasks.format]
+description = "Auto-format Python and JS/TS/config files"
+run = """
+uv run ruff format .
+uv run ruff check --fix .
+bun run format
+"""
+
+[tasks.validate]
+description = "Validate marketplace, plugin manifests, and SKILL.md frontmatter"
+run = "./scripts/validate_manifests.py"
+
+[tasks.new-plugin]
+description = "Scaffold a new plugin under plugins/<name>/"
+usage = """
+arg "<name>" help="Plugin name (kebab-case)"
+arg "<description>" help="One-line description"
+"""
+run = "./scripts/new_plugin.sh ${usage_name} \"${usage_description}\""
+
+[tasks.pre-commit-all]
+description = "Run pre-commit on all files"
+run = "uv run pre-commit run --all-files"
+
+[tasks.pre-commit-staged]
+description = "Run pre-commit on staged files"
+run = "uv run pre-commit run --files $(git diff --name-only --cached)"

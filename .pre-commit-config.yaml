@@ -1,0 +1,45 @@
+---
+exclude: ^(\.venv/|node_modules/|\.claude/|.*\.lock$)
+default_stages: [pre-commit]
+default_language_version:
+    python: python3.14
+
+repos:
+    - repo: https://github.com/codespell-project/codespell
+      rev: v2.4.2
+      hooks:
+          - id: codespell
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v6.0.0
+      hooks:
+          - id: check-yaml
+          - id: check-json
+          - id: check-merge-conflict
+          - id: end-of-file-fixer
+          - id: trailing-whitespace
+            args: [--markdown-linebreak-ext=md]
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.15.11
+      hooks:
+          - id: ruff
+            args: [--fix]
+          - id: ruff-format
+    - repo: local
+      hooks:
+          - id: oxlint
+            name: oxlint
+            entry: bunx oxlint
+            language: system
+            files: \.(js|jsx|ts|tsx)$
+            pass_filenames: false
+          - id: oxfmt
+            name: oxfmt
+            entry: bunx oxfmt --write --no-error-on-unmatched-pattern
+            language: system
+            files: \.(js|jsx|ts|tsx|mjs|css|scss|sass|md|toml|yaml|yml)$
+          - id: validate-manifests
+            name: validate marketplace + plugin manifests + SKILL.md
+            entry: ./scripts/validate_manifests.py
+            language: system
+            files: (^\.claude-plugin/.+\.json$|^plugins/.+/(plugin\.json|SKILL\.md)$)
+            pass_filenames: false

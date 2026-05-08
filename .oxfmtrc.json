@@ -1,0 +1,56 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": false,
+  "printWidth": 80,
+  "tabWidth": 2,
+  "useTabs": false,
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "sortPackageJson": false,
+  "overrides": [
+    {
+      "files": ["*.yaml", "*.yml"],
+      "options": {
+        "tabWidth": 4,
+        "printWidth": 120
+      }
+    },
+    {
+      "files": ["*.toml"],
+      "options": {
+        "tabWidth": 2
+      }
+    },
+    {
+      "files": ["*.md"],
+      "options": {
+        "tabWidth": 4,
+        "proseWrap": "always",
+        "printWidth": 100
+      }
+    },
+    {
+      "files": ["plugins/**/skills/**/SKILL.md", ".claude/**/*.md"],
+      "options": {
+        "tabWidth": 4,
+        "proseWrap": "preserve"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "build/",
+    "dist/",
+    "*.min.js",
+    "*.min.css",
+    "*.lock",
+    "*.log",
+    "*.py",
+    ".claude/",
+    ".venv/",
+    "node_modules/",
+    "README.md"
+  ]
+}
