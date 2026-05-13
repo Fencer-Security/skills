@@ -16,6 +16,7 @@ Public marketplace of [Claude Code](https://code.claude.com) and [Codex](https:/
 ```
 /plugin marketplace add https://github.com/Fencer-Security/skills
 /plugin install <plugin-name>@fencer
+/reload-plugins
 ```
 
 ### Codex
