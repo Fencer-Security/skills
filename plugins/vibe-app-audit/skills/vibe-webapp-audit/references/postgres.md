@@ -13,6 +13,18 @@ The headline failure mode: **endpoints that take a resource ID from the URL or b
 and return without checking ownership.** This is IDOR and it's the single most common AI-generated
 authorization bug.
 
+**Before flagging an authz finding, ask yourself**: does the ownership check happen at the _query
+level_ (`WHERE user_id = :auth.uid`) or at the _response level_ (fetch, then check, then maybe
+filter)? Response-level checks leak timing information (different latency for "exists but not yours"
+vs "doesn't exist") and are easier to bypass via parallel paths. Query-level filtering is the safer
+pattern.
+
+**NEVER trust a `userId` / `user_id` / `customerId` value from `req.body`, `req.query`, or any
+client-supplied source as an authorization claim.** It must come from the authenticated session
+(`req.user.id`, `session.user.id`, `request.user.pk`). Code like
+`db.order.findMany({ where: { userId: req.body.userId } })` is broken even though it looks like it
+filters by user. **Severity: Critical** — any authenticated user can read anyone's data.
+
 ## Step 1 — Map the request flow
 
 Figure out how the app authenticates and authorizes requests. Detect the framework first:
