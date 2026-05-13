@@ -170,13 +170,22 @@ session lookup the server alone controls, it's real.
 
 ## 4 — Security headers (static config)
 
-The live header probe is in `references/live-tests.md`; the framework-config check is static and
-runs whether or not a deployed URL was given:
+**Before flagging missing headers, ask yourself**: does the framework set safe defaults, or does
+the app need to opt in? Next.js, Express + helmet, and most modern frameworks ship sane
+defaults; the finding is when the developer has _overridden_ them (a custom `headers()` function
+that drops CSP, a `helmet({ contentSecurityPolicy: false })` call). Missing-config-on-default-
+safe-framework is **Info**; explicit-override-removing-protection is **High**.
+
+The live header probe is in `references/live-tests.md` and is more authoritative than the
+static config — frameworks can be overridden by proxies and CDNs. This static check exists for
+the no-deployed-URL case.
+
+**Where header config lives:**
 
 ```bash
 # Next.js
 grep -A20 "headers" next.config.js next.config.mjs next.config.ts 2>/dev/null
-# Vercel / Netlify
+# Vercel / Netlify (override framework defaults)
 cat vercel.json netlify.toml 2>/dev/null
 # Express helmet
 grep -r "helmet" --include="*.{ts,js}" . | head -5

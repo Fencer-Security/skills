@@ -158,6 +158,12 @@ grep -rE "(installations|workspaces|teams).*table" --include="*.{ts,js,py,sql}" 
 
 ## 4 — Command and mention handling
 
+**Before flagging command handling, ask yourself**: which fields in the event came from the
+_platform_ (set by Slack/Discord/GitHub after verifying the actor) and which came from the
+_user_ (free-text in a message or slash-command body)? The first category is trustworthy once
+signature verification passes; the second is never trustworthy regardless of who sent it. The
+confusion is the bug.
+
 The headline failure mode: trusting input from the chat platform as if it were authoritative.
 
 - A `@user` mention in a message is just text — the bot must not use it as an identity claim. If
@@ -177,6 +183,12 @@ Patterns to flag:
 - Database query interpolating message text. **Critical** (SQLi via Slack message).
 
 ## 5 — Prompt injection for LLM-forwarded bots
+
+**Before flagging an LLM-forwarded bot, ask yourself**: what _tools_ does the LLM have access
+to, and is there a _human-gated step_ before any destructive one? The system prompt is not the
+control — it's a hint. The control is whether the bot's tool dispatcher pauses on destructive
+calls to wait for human yes/no. An LLM with `delete_channel` and "please be careful" in the
+system prompt is one prompt injection away from a `delete_channel(channel)` call.
 
 If the bot pipes message content to an LLM (Claude, GPT, etc.):
 

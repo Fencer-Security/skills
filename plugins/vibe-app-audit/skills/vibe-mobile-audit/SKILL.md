@@ -210,7 +210,24 @@ Flag:
 
 ## 4 — WebView usage
 
+**Before flagging a WebView, ask yourself**: what does it load, and what does its JS bridge
+expose? A WebView loading only bundled HTML is roughly as safe as the rest of the app. A
+WebView loading remote URLs is a potential XSS vector. A WebView loading remote URLs _with_ a
+JS bridge that calls native methods is a remote-code-execution vector. The combination is the
+finding, not the WebView alone.
+
 A WebView with a JS-to-native bridge is a category of RCE if untrusted content can reach it.
+
+**Patterns to flag:**
+
+| Pattern                                                                                                      | Severity     |
+| ------------------------------------------------------------------------------------------------------------ | ------------ |
+| `addJavascriptInterface` / `WKScriptMessageHandler` exposing native I/O / shell, AND remote-loadable WebView | **Critical** |
+| WebView loading user-supplied / attacker-influenceable URLs                                                  | **High**     |
+| React Native `onMessage` handler that `eval`s or routes by message data                                      | **High**     |
+| `UIWebView` on iOS (deprecated, removed in iOS 12+)                                                          | **Medium**   |
+
+**Find the surface:**
 
 ```bash
 # React Native
@@ -225,64 +242,71 @@ grep -rE "(WKWebView|UIWebView|addScriptMessageHandler|evaluateJavaScript)" \
 grep -rE "(WebView|addJavascriptInterface|setJavaScriptEnabled)" --include="*.{kt,java}" . | head -10
 ```
 
-Flag:
-
-- WebView loading user-supplied or attacker-influenceable URLs. **High**.
-- `addJavascriptInterface` (Android) or `WKScriptMessageHandler` (iOS) exposing a method that
-  performs file I/O, network, or any destructive action, AND the WebView loads anything other
-  than fixed app-bundle content. **Critical**.
-- React Native `WebView` with `onMessage` handler that `eval`s, navigates to a path derived
-  from message data, or executes any tool-like operation. **High**.
-- `UIWebView` on iOS (deprecated, less safe than WKWebView). **Medium**.
-
 ## 5 — Permissions
+
+**Before flagging a permission, ask yourself**: does the app's code actually _use_ it? Many
+vibe-coded apps request permissions a template suggested (camera, location, contacts) without
+the corresponding code path. Unused permissions are still findings — they expand the user's
+trust surface and are a Play/App Store policy concern — but they're cleanup-level, not exploit-
+level. Used-but-over-broad (e.g., `ACCESS_FINE_LOCATION` when coarse would do) is the higher-
+severity case.
+
+**Patterns to flag:**
+
+| Pattern                                                                            | Severity                           |
+| ---------------------------------------------------------------------------------- | ---------------------------------- |
+| Permission requested but no corresponding code-path usage                          | **Low–Medium** (cleanup)           |
+| `android.permission.QUERY_ALL_PACKAGES` without justification                      | **Medium** (Play policy + privacy) |
+| `SYSTEM_ALERT_WINDOW` (overlay) for non-overlay apps                               | **Medium**                         |
+| `WRITE_EXTERNAL_STORAGE` on API 30+ (should use scoped storage)                    | **Low**                            |
+| `READ_PHONE_STATE` / `READ_PHONE_NUMBERS` for apps that don't need them            | **Medium**                         |
+| Fine-grained when coarse would do (`ACCESS_FINE_LOCATION` for city-level features) | **Low**                            |
+
+**Find the surface:**
 
 ```bash
 # iOS — Info.plist usage descriptions
 grep -E "NS.*UsageDescription" ios/<project>/Info.plist app.json 2>/dev/null
-
 # Android — manifest permissions
 grep -A1 "<uses-permission" android/app/src/main/AndroidManifest.xml 2>/dev/null
-
 # Expo — app.json permissions section
 grep -A20 "permissions" app.json app.config.js 2>/dev/null
 ```
 
-Flag:
-
-- Permissions requested that the app doesn't appear to use (background location, contacts,
-  microphone, camera, SMS for an app that doesn't need them). **Medium** — App Store / Play
-  Store review may catch this, but vibe-coded apps often request a kitchen sink.
-- `android.permission.QUERY_ALL_PACKAGES` without a clear need. **Medium**.
-- Android `<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE">` on API
-  30+ (deprecated; should use scoped storage). **Low**.
-
 ## 6 — Backup and on-device exposure
 
-Sensitive data included in device backups (iCloud, Google Drive) is exposed wherever the backup
-goes.
+**Before flagging a backup finding, ask yourself**: is sensitive data being written _somewhere_
+the backup picks up? `allowBackup=true` alone isn't a finding — it's a finding when combined
+with auth tokens / PII in `SharedPreferences` / app-private files. The backup path inherits the
+content; if the content was safe (everything in Keystore, nothing sensitive in SharedPrefs),
+the backup flag is mostly moot.
+
+Sensitive data included in device backups (iCloud, Google Drive) is exposed wherever the
+backup goes.
+
+**Patterns to flag:**
+
+| Pattern                                                                         | Severity                            |
+| ------------------------------------------------------------------------------- | ----------------------------------- |
+| Android `allowBackup="true"` AND auth tokens / PII in `SharedPreferences`/files | **Medium**                          |
+| iOS files written with `NSFileProtectionNone` AND containing sensitive content  | **Medium** (locked-device readable) |
+| iOS sensitive files NOT excluded from backup (and not Keychain-stored)          | **Low**                             |
+
+**Find the surface:**
 
 ```bash
-# Android — allowBackup in manifest
 grep "allowBackup" android/app/src/main/AndroidManifest.xml 2>/dev/null
-
-# iOS — files marked as NSFileProtectionNone
 grep -rE "NSFileProtectionNone|FileProtectionType\.none" --include="*.{swift,m}" . | head -10
-
-# iOS — excluded from backup
 grep -rE "(isExcludedFromBackup|NSURLIsExcludedFromBackupKey)" --include="*.{swift,m}" . | head -10
 ```
 
-Flag:
-
-- Android `android:allowBackup="true"` (default on older SDKs) AND the app stores auth tokens
-  or PII in files / `SharedPreferences`. **Medium**.
-- iOS sensitive files NOT marked as excluded from backup. **Low** unless the file contains
-  secrets.
-- iOS files written with `NSFileProtectionNone` AND containing sensitive data. **Medium** (data
-  readable when the device is locked).
-
 ## 7 — Backend API trust boundary
+
+**Before flagging a backend-trust finding, ask yourself**: is this a _client-side_ defect
+(something the client does wrong with the API response) or a _server-side_ defect (something
+the backend itself does wrong)? The mobile audit only flags the client-side half. Server-side
+auth gaps, IDOR, missing input validation belong to `vibe-service-audit` — recommend running
+it as a follow-up if no separate backend audit happened.
 
 The backend API the app calls is a separate threat surface — full audit belongs to
 `vibe-service-audit`. In this skill, flag only the client-side issues:

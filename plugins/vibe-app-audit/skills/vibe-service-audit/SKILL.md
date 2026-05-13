@@ -187,6 +187,12 @@ grep -rE "(email|phone|ssn|password|token|api_key)" --include="*.{ts,js,py}" . |
 
 ## 5 — Idempotency and replay safety
 
+**Before flagging an idempotency gap, ask yourself**: is this handler _naturally_ idempotent
+(e.g., upserts a key with a deterministic value) or does it produce duplicates on every retry
+(e.g., appends a row, sends an email, charges a card)? Platforms retry deliveries; without
+idempotency, a single user event can become 5 charges, 5 emails, 5 rows. Severity tracks the
+visible-to-users impact of duplication.
+
 Webhook receivers and event handlers must be safe to receive the same event twice.
 
 - Look for an idempotency-key lookup before performing the action.
@@ -198,6 +204,13 @@ Webhook receivers and event handlers must be safe to receive the same event twic
 effect is a payment, an email to a user, or a row-write that can't be rolled back.
 
 ## 6 — Job and scheduled-trigger authentication
+
+**Before flagging a cron handler, ask yourself**: how is the scheduler _talking_ to this code?
+Vercel cron hits an HTTP endpoint on your deployment with an `Authorization` header from
+`CRON_SECRET`. GitHub Actions invokes a workflow with its own auth. Lambda+EventBridge fires
+events through IAM. The scheduler-to-handler edge is what needs auth; an unauthenticated HTTP
+endpoint that just _happens_ to be the cron target is a backdoor anyone with the URL can
+trigger.
 
 For cron jobs / scheduled tasks (GitHub Actions, Vercel cron, Render cron, Lambda+EventBridge):
 

@@ -83,58 +83,53 @@ that ends up in `print(arg)` is fine. The same argument flowing into `subprocess
 the actual risk. Trace from `argparse` / `commander` to first use; severity is set by the _sink_,
 not the _source_.
 
-Look at how arguments reach the rest of the code.
+**Patterns to flag** (severity from the sink, not the source):
+
+| Pattern                                                         | Severity     |
+| --------------------------------------------------------------- | ------------ |
+| Argument concatenated into shell command (see §2)               | **Critical** |
+| Argument used as URL the script then `eval`s or shells out with | **Critical** |
+| Argument-supplied file path without `realpath` + containment    | **High**     |
+| No `--help` text on destructive flags                           | **Low** (UX) |
+
+**Find the surface:**
 
 ```bash
-# Python: argparse
 grep -rE "add_argument" --include="*.py" . | head -20
-
-# Click / Typer
 grep -rE "@click\.(option|argument)|@app\.command" --include="*.py" . | head -10
-
-# Node: commander/yargs
 grep -rE "\.argument|\.option" --include="*.{ts,js}" . | head -20
-
-# Bash: $1, $2, "$@"
 grep -nE '\$\{?[0-9@\*]\}?|\$@|\$\*' --include="*.sh" -r . | head -20
 ```
 
-Flag:
-
-- Arguments accepting file paths without basename/realpath normalization → path traversal risk.
-- Arguments accepting URLs that the script will fetch and `eval` or shell-out with. **Critical**.
-- Arguments concatenated into shell commands. **Critical** (see section 2).
-- No `--help` text or examples for destructive flags. **Low** (UX, not security, but flag).
-
 ## 2 — Subprocess and shell-out
 
-**Before flagging a subprocess call, ask yourself**: is the shell involved at all? `subprocess.run([
-"cmd", arg])` (list form) is safe even with untrusted args. `subprocess.run(f"cmd {arg}",
-shell=True)` is RCE even with "trusted" args. The shell is the boundary; list-form bypasses it.
+**Before flagging a subprocess call, ask yourself**: is the shell involved at all?
+`subprocess.run(["cmd", arg])` (list form) is safe even with untrusted args.
+`subprocess.run(f"cmd {arg}", shell=True)` is RCE even with "trusted" args. The shell is the
+boundary; list-form bypasses it.
+
+**Patterns to flag:**
+
+| Pattern                                               | Severity     |
+| ----------------------------------------------------- | ------------ |
+| `subprocess.run(..., shell=True)` with any user input | **Critical** |
+| `exec()` / `execSync()` with string concatenation     | **Critical** |
+| Bash `eval` of user input                             | **Critical** |
+| Unquoted variables in shell commands (`rm $path`)     | **High**     |
+
+**Safe patterns** (confirm and don't flag):
+
+- `subprocess.run(["cmd", arg1, arg2])` — list form, no shell.
+- `execFile(cmd, [arg1, arg2])` in Node — args go via argv, not a shell.
+
+**Find the surface:**
 
 ```bash
-# Python
 grep -rnE "subprocess\.(run|call|Popen|check_output)|os\.(system|popen)" --include="*.py" . | head -30
 grep -rnE "shell=True" --include="*.py" . | head -20
-
-# Node
 grep -rnE "(exec|execSync|spawn|spawnSync|child_process)" --include="*.{ts,js}" . | head -20
-
-# Bash — anything that uses unquoted variables in commands
 grep -rnE 'eval|\$\(' --include="*.sh" . | head -20
 ```
-
-Flag:
-
-- `subprocess.run(..., shell=True)` with any user-controlled input. **Critical**.
-- `exec()` / `execSync()` with string concatenation. **Critical**.
-- Bash `eval` of user input. **Critical**.
-- Unquoted variables in shell commands (`rm $path` instead of `rm "$path"`). **High**.
-
-Safe patterns to confirm:
-
-- `subprocess.run(["cmd", arg1, arg2])` (list form, no shell). OK.
-- `execFile(cmd, [arg1, arg2])` in Node. OK.
 
 ## 3 — File I/O
 
@@ -142,22 +137,22 @@ Safe patterns to confirm:
 `os.path.realpath(path)` resolves symlinks but doesn't enforce containment — you still need to
 check the resolved path is under an allowed root. Normalization alone is half the fix.
 
+**Patterns to flag:**
+
+| Pattern                                                                                  | Severity                 |
+| ---------------------------------------------------------------------------------------- | ------------------------ |
+| Path constructed by string concatenation of user input (no realpath + containment)       | **High** — traversal     |
+| Writes to `/tmp/<predictable-name>` without `mkstemp` / `mktemp`                         | **Medium** — TOCTOU race |
+| Follows symlinks when writing to user-controlled paths (no `O_NOFOLLOW` / `lstat` check) | **Medium**               |
+
+**Find the surface:**
+
 ```bash
-# Path joining and traversal-prone patterns
 grep -rnE "open\(.*\+|os\.path\.join.*input|join\(.*req" --include="*.py" . | head -20
 grep -rnE "(readFile|writeFile|fs\.).*\+.*argv" --include="*.{ts,js}" . | head -20
-
-# Symlink-related calls
 grep -rnE "(os\.symlink|fs\.symlink|os\.readlink|fs\.lstat|os\.lstat)" \
   --include="*.{ts,js,py}" . | head -10
 ```
-
-Flag:
-
-- Path constructed by string concatenation of user-supplied input. **High** (traversal).
-- Writes to `/tmp/<predictable-name>` without `mkstemp` / `mktemp` — TOCTOU race. **Medium**.
-- Follows symlinks when writing to a user-controlled path (no `O_NOFOLLOW` / `lstat` check).
-  **Medium**.
 
 ## 4 — Credential file hygiene
 
@@ -166,21 +161,21 @@ script _creates_ needs `0600` on write. A file the script _reads_ (operator-supp
 mode check before reading — fail closed on `world-readable`. Two different obligations from the
 same file path.
 
+**Patterns to flag:**
+
+| Pattern                                                              | Severity                   |
+| -------------------------------------------------------------------- | -------------------------- |
+| Script writes a credfile with mode 0644 / world-readable             | **High**                   |
+| Script reads a credfile from arg-supplied path without normalization | **Medium**                 |
+| Reads `~/.aws/credentials` etc. without checking owner-only mode     | **Low** — defense-in-depth |
+
+**Find the surface:**
+
 ```bash
-# Where does the script read secrets from?
 grep -rnE "(open|read|load).*\.(json|yaml|toml|env|secret|key|pem)" --include="*.{ts,js,py,sh}" .
 grep -rnE "os\.environ|process\.env" --include="*.{ts,js,py}" . | head -20
-
-# Permission checks on credentials before reading?
 grep -rnE "(stat|st_mode|access\()" --include="*.{ts,js,py}" . | head -10
 ```
-
-Flag:
-
-- Reads `~/.aws/credentials` / `~/.config/.../credentials` without checking file mode is owner-
-  only. **Low** (defense-in-depth; the OS provides some protection).
-- Writes a credfile with mode 0644 (world-readable). **High**.
-- Reads a credfile from a path supplied via argument with no normalization. **Medium**.
 
 ## 5 — Network calls
 
@@ -189,12 +184,19 @@ code path? A test fixture that hits a local self-signed server with `verify=Fals
 same line in production code is **Critical**. Check whether the call is gated by an env / debug
 flag or whether it runs unconditionally.
 
+**Patterns to flag:**
+
+| Pattern                                                                                  | Severity                         |
+| ---------------------------------------------------------------------------------------- | -------------------------------- |
+| TLS verification disabled in unconditional / production code path                        | **Critical**                     |
+| Cleartext HTTP for non-localhost remote, carrying credentials                            | **High**                         |
+| TLS verification disabled but gated behind a clearly-named debug env / `--insecure` flag | **Low** (note but don't promote) |
+
+**Find the surface:**
+
 ```bash
-# TLS verification disabled
 grep -rnE "(verify=False|rejectUnauthorized: false|InsecureSkipVerify|disable.*tls)" \
   --include="*.{ts,js,py}" . | head -10
-
-# HTTP (not HTTPS) base URLs
 grep -rnE "http://(?!localhost|127\.)" --include="*.{ts,js,py}" . | head -10
 ```
 

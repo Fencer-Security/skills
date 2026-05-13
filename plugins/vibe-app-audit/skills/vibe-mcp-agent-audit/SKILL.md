@@ -142,6 +142,12 @@ LLM to send well-formed args, especially under prompt injection).
 
 ## 3 — Prompt injection
 
+**Before flagging a prompt-injection risk, ask yourself**: where does _adversarial_ content
+enter the model context? Direct injection (user types it) is expected and not by itself a
+finding — the question is what tools the agent can call in response. Indirect injection
+(content arrives via a tool that fetched the web, read an email, opened a file) is the higher-
+risk category because the user often didn't _intend_ to send that content to the model.
+
 Direct: user input goes straight into the LLM prompt. This is normal for an agent; the issue is
 what the agent can do with it.
 
@@ -161,6 +167,12 @@ Flag:
 
 ## 4 — Output sanitization
 
+**Before flagging output as leaking, ask yourself**: who reads the agent's _full context_ —
+the user, the developer in logs, or both? An agent that "summarizes a file" with a `read_file`
+tool can leak the file's contents in two places: the assistant's reply (user sees it) and
+the conversation log (developer sees it). Both are leak channels; severity tracks who shouldn't
+have seen what.
+
 The LLM's reply is rendered back to the user / client. If the reply contains content the LLM
 read from a tool, secrets in that content leak.
 
@@ -172,6 +184,12 @@ Flag:
 - Logs capture full LLM context, including tool outputs that contain secrets. **High**.
 
 ## 5 — Tool-level authorization
+
+**Before flagging an authz gap, ask yourself**: is this MCP server / agent single-tenant
+(stdio, one user, one process) or multi-tenant (HTTP, multiple users connecting)? Single-tenant
+stdio servers don't need per-call authz — the transport itself implies one trusted client.
+Multi-tenant network deployments inherit _all_ the authz concerns of a regular service, on top
+of the tool-surface concerns above.
 
 For MCP servers exposed to multiple clients, or agents accessed by multiple users:
 
@@ -189,22 +207,29 @@ Flag:
 
 ## 6 — Resource limits
 
+**Before flagging a missing limit, ask yourself**: who _pays_ when the loop runs away? In a
+developer's local agent, an unbounded loop just burns the developer's tokens — annoying but
+not a security issue. In a SaaS deployment, the same loop is a DoS vector: a single user can
+exhaust the team's monthly Anthropic budget in minutes. Severity tracks the deployment model,
+not the code shape.
+
+**Patterns to flag:**
+
+| Pattern                                                                     | Severity                                               |
+| --------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Agent loop with no maximum-iterations guard                                 | **Medium** in SaaS / multi-user; **Low** in local-only |
+| Tool that recurses without depth limit (e.g., `list_all_files`)             | **Low**                                                |
+| No token budget per session in a SaaS deployment                            | **Medium** — cost-DoS vector                           |
+| Tool returns can balloon the context (full file contents, entire web pages) | **Low** — cost + accuracy degradation                  |
+
+**Find the surface:**
+
 ```bash
-# Look for guards on agent loops
 grep -rE "(max_iterations|max_steps|max_tokens|maxTurns|MAX_LOOP)" \
   --include="*.{ts,js,py}" . | head -10
-
-# Recursion depth
 grep -rE "(setMaxListeners|stack.*limit|sys\.setrecursionlimit)" \
   --include="*.{ts,js,py}" . | head -10
 ```
-
-Flag:
-
-- Agent loop with no maximum-iterations guard. **Medium** (infinite-loop / budget burn).
-- Tool that recurses (e.g., a `list_all_files` that doesn't limit depth) — combined with an LLM,
-  this can hang the agent or balloon token spend. **Low**.
-- No token budget per session. **Low** (cost concern, not security per se, but flag for SaaS).
 
 ## Producing the report
 
