@@ -1,7 +1,7 @@
 ---
 name: vibe-mobile-audit
 description: Audit a vibe-coded mobile app (Expo, React Native, native iOS / Android, less commonly Flutter) against a category-specific security checklist and produce a markdown report with severity-tagged findings. Use when the user wants to security-review a mobile app. Phrases like "audit my Expo app," "review my React Native app," "is this iOS app safe," "check my Android app for security issues," or "audit this mobile build" all qualify. Covers insecure secret storage (Keychain / Keystore vs UserDefaults / SharedPreferences / AsyncStorage), network security (cert pinning, App Transport Security, NetworkSecurityConfig), deep links / URL schemes / intent filters, WebView usage and JS bridges, over-broad permissions, backup-included sensitive data, and backend API trust boundaries — on top of the shared baseline. Runs safe live probes against the backend API the app talks to and, if the user provides a built IPA/APK, inspects the bundle for embedded secrets.
-allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(plutil:*) Bash(xmllint:*) Bash(unzip:*) Bash(file:*) Bash(strings:*) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(gitleaks:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(plutil:*) Bash(xmllint:*) Bash(unzip:*) Bash(file:*) Bash(strings:*) Bash(brew install gitleaks) Bash(go install github.com/gitleaks/gitleaks/v8@latest) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
 ---
 
 # Vibe-coded mobile app security audit
@@ -140,11 +140,17 @@ grep -rE "(EncryptedSharedPreferences|KeyStore|MasterKey)" --include="*.{kt,java
 
 ## 2 — Network security
 
+**Before flagging a network-security finding, ask yourself**: is the platform's _default_ safe,
+and has the developer opted _out_ of it? iOS (ATS, opt-out via `NSAllowsArbitraryLoads`) and
+Android (API 28+ cleartext-off, opt-out via `network_security_config.xml`) both default to
+"HTTPS only." Plain HTTP requires an explicit dial-down, which is a deliberate developer act
+and warrants severity. No opt-out, no finding.
+
+**Find the platform config:**
+
 ```bash
-# React Native — config files
 ls app.json app.config.js ios/<project>/Info.plist android/app/src/main/res/xml 2>/dev/null
 
-# Cert pinning library
 grep -hE '"(react-native-ssl-pinning|@trust-pkg/.*pinning)"' package.json 2>/dev/null
 grep -rE "(URLSessionPinningDelegate|TrustKit|CertificatePinner)" \
   --include="*.{swift,m,kt,java}" . | head -10

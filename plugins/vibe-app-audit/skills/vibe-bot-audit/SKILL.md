@@ -1,7 +1,7 @@
 ---
 name: vibe-bot-audit
 description: Audit a vibe-coded chat bot (Slack, Discord, GitHub, Microsoft Teams) against a category-specific security checklist and produce a markdown report with severity-tagged findings. Use when the user wants to security-review a bot — phrases like "audit my Slack bot," "review my Discord bot," "is this GitHub App safe," "check my Teams bot for security issues," or "is my chatops handler secure" all qualify. Covers platform signature verification (Slack signing secret, Discord ed25519, GitHub HMAC-SHA256), OAuth scope minimization, bot/user-token storage, command and mention handling (never trusting user-supplied identity), and prompt-injection vectors for LLM-forwarded bots — on top of the shared baseline (secrets, SAST, deps, monitoring). Runs safe live probes against the bot endpoint (unsigned events rejected, replayed events rejected, outdated timestamps rejected) and asks before any intrusive probe.
-allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(openssl:*) Bash(python3:*) Bash(node:*) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(gitleaks:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(openssl:*) Bash(python3:*) Bash(node:*) Bash(brew install gitleaks) Bash(go install github.com/gitleaks/gitleaks/v8@latest) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
 ---
 
 # Vibe-coded chat bot security audit
@@ -131,25 +131,30 @@ Flag:
 
 ## 3 — Token storage
 
+**Before flagging a token-storage finding, ask yourself**: is this a _bot token_ (one per
+install, impersonates the bot) or a _user token_ (one per user, impersonates them)? Leak
+severity differs by what the token _can do_. A bot token for a single test workspace is
+**Low**; the same shape token for a 1000-workspace SaaS bot is **Critical** because every
+workspace is now compromised by one row read.
+
+**Patterns to flag:**
+
+| Pattern                                                                        | Severity                                                |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| Bot/user tokens written to a world-readable file                               | **High**                                                |
+| Per-workspace install tokens in a DB column with no app-layer encryption / KMS | **Medium** for single-tenant; **High** for multi-tenant |
+| Refresh tokens stored alongside access tokens with no rotation                 | **Medium**                                              |
+| Tokens logged in install/uninstall handlers                                    | **High**                                                |
+
+**Find the surface:**
+
 ```bash
-# Token-handling code paths
 grep -rE "bot_token|BOT_TOKEN|access_token|ACCESS_TOKEN|installation" \
   --include="*.{ts,js,py}" . | head -20
-
-# Tokens written to files
 grep -rE "(writeFile|fs\.write|open\(.*['\"]w)" --include="*.{ts,js,py}" . | \
   grep -iE "token" | head -10
-
-# Database table names for tokens
 grep -rE "(installations|workspaces|teams).*table" --include="*.{ts,js,py,sql}" . | head -10
 ```
-
-Flag:
-
-- Bot tokens written to a world-readable file. **High**.
-- Per-workspace install tokens stored in a database column without encryption-at-rest
-  consideration (no envelope encryption, no KMS reference). **Medium**.
-- Refresh tokens stored alongside access tokens with no rotation logic. **Medium**.
 
 ## 4 — Command and mention handling
 

@@ -27,46 +27,68 @@ absolute path and what to add to their `PATH`, then skip the check this run.
 
 Canonical install commands:
 
-| Tool                | Command                                                                        | Notes                                                |
-| ------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| `opengrep`          | `uv tool install opengrep` (preferred)                                         | LGPL-2.1 OSS fork of semgrep; same ruleset shortcuts |
-| `semgrep`           | `uv tool install semgrep` or `brew install semgrep`                            | Fallback if opengrep unavailable                     |
-| `pip-audit`         | `uv tool install pip-audit`                                                    | For Python dep auditing                              |
-| `bundle-audit`      | `gem install --user-install bundler-audit`                                     | Ruby                                                 |
-| `govulncheck`       | `go install golang.org/x/vuln/cmd/govulncheck@latest`                          | Go; needs Go toolchain                               |
-| `bun`/`pnpm`/`yarn` | Already-present is required — don't install a JS package manager just to audit | Skip the check and note it                           |
+| Tool                | Command                                                                        | Notes                                                  |
+| ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| `gitleaks`          | `brew install gitleaks` or `go install github.com/gitleaks/gitleaks/v8@latest` | Purpose-built secret scanner; 100+ rules + git history |
+| `opengrep`          | `uv tool install opengrep` (preferred)                                         | LGPL-2.1 OSS fork of semgrep; same ruleset shortcuts   |
+| `semgrep`           | `uv tool install semgrep` or `brew install semgrep`                            | Fallback if opengrep unavailable                       |
+| `pip-audit`         | `uv tool install pip-audit`                                                    | For Python dep auditing                                |
+| `bundle-audit`      | `gem install --user-install bundler-audit`                                     | Ruby                                                   |
+| `govulncheck`       | `go install golang.org/x/vuln/cmd/govulncheck@latest`                          | Go; needs Go toolchain                                 |
+| `bun`/`pnpm`/`yarn` | Already-present is required — don't install a JS package manager just to audit | Skip the check and note it                             |
 
 If a tool the user uses every day is missing (e.g., they have a Go project but no Go toolchain),
 don't offer to install Go — that's beyond the scope of an audit. Skip the check.
 
 ## Check A — Exposed secrets
 
-Look for secrets baked into client-side code, scripts, or otherwise committed.
+**Before flagging a secret, ask yourself**: is this a _bundled_ secret (will reach every user of the
+app) or a _committed-but-server-only_ secret (reached only by attackers with repo access)? The blast
+radius is very different. A Stripe live key in `NEXT_PUBLIC_*` is **Critical** every time — it ships
+to every browser. The same key in a committed `.env` that's gitignored-but-in- history is **High** —
+exposed to whoever pulls history, not to every visitor.
+
+**Run gitleaks** — it's purpose-built for this and dramatically better than hand-rolled grep because
+it (a) handles git history, not just the working tree, (b) ships with 100+ validated rules for known
+secret formats, (c) has an entropy heuristic for unknown secrets, and (d) knows how to redact in
+output.
 
 ```bash
-# Public env vars containing secrets — the dangerous pattern
+if command -v gitleaks >/dev/null; then
+  # Working tree + uncommitted (matches files in the audit scope)
+  gitleaks detect --source . --no-banner --redact -v --report-format json
+  # Git history (catches "we removed it but it's still in the log")
+  gitleaks detect --source . --no-banner --redact -v --log-opts="--all"
+fi
+```
+
+If `gitleaks` isn't installed, apply the **install-and-continue protocol**: ask the user
+`Install gitleaks with brew install gitleaks and then run secret detection? [y/N]`. On no, fall back
+to the minimal grep set below — but record in the report that secret scanning was done with grep,
+not gitleaks, and is best-effort.
+
+### Fallback grep (only if gitleaks declined / unavailable)
+
+```bash
+# Public env vars holding non-public-looking values — the dangerous pattern in vibe-coded apps
 grep -rE "(NEXT_PUBLIC_|VITE_|REACT_APP_|EXPO_PUBLIC_|PUBLIC_)[A-Z_]*(SECRET|KEY|TOKEN|PASSWORD|SERVICE_ROLE)" \
   --include="*.{ts,tsx,js,jsx}" --include=".env*" .
-
-# Hardcoded common secret formats. Note: `eyJhbGciOi` matches any base64-encoded
-# `{"alg":` JSON, including legitimate sample JWTs in fixtures and docs —
-# investigate matches before flagging, don't flag fixture tokens.
-grep -rE "(sk_live_|sk_test_|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|xox[baprs]-|eyJhbGciOi)" \
-  --include="*.{ts,tsx,js,jsx,py}" --include=".env*" .
 
 # Supabase service role key — the headline incident
 grep -rE "service_role|SERVICE_ROLE_KEY" --include="*.{ts,tsx,js,jsx,py}" .
 
-# Is .env committed? (only-noise stderr is expected outside a git repo)
+# .env committed or in history (catches the case gitleaks would also catch)
 git ls-files 2>/dev/null | grep -E "^\.env($|\.)" || echo ".env not tracked"
-
-# .env in git history (even if removed). Suppress: missing files are expected.
 git log --all --full-history --source -- .env .env.local .env.production 2>/dev/null | head -20
 ```
 
-**Severity guide:**
+The fallback grep is intentionally minimal — it catches the two highest-signal vibe-coded mistakes
+(`*_PUBLIC_*_SECRET` and Supabase service role) without competing with gitleaks on broader coverage.
+If the user declined gitleaks, the report says so.
 
-- Production API key (Stripe live, AWS, etc.) committed to repo: **Critical**.
+**Severity guide** (applies to either source — gitleaks finding or grep hit):
+
+- Production API key (Stripe live, AWS, etc.) committed to repo or in history: **Critical**.
 - Service role key in any client-bundled file (`NEXT_PUBLIC_*`, imported into a client component,
   anything in `pages/`/`app/` that isn't `'use server'` / API route): **Critical**.
 - Bot token, OAuth client secret, or signing secret in a committed file: **Critical**.
@@ -77,6 +99,9 @@ git log --all --full-history --source -- .env .env.local .env.production 2>/dev/
 A `NEXT_PUBLIC_SUPABASE_ANON_KEY` is _expected_ and not a finding by itself — the anon key is meant
 to be public. The finding is when the _service role_ key has been exposed, or when RLS isn't enabled
 to make the anon key safe to expose (that's a category-specific check).
+
+When reporting gitleaks output: don't dump the JSON. Group by rule (e.g., "Stripe live key, 3
+findings") and list file:line for each.
 
 ## Check B — Static analysis (SAST)
 

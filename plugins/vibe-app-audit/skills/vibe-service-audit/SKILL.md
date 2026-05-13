@@ -1,7 +1,7 @@
 ---
 name: vibe-service-audit
 description: Audit a vibe-coded backend service, integration, ingestion job, or webhook handler against a category-specific security checklist and produce a markdown report with severity-tagged findings. Use when the user wants to security-review a non-user-facing service — a Stripe/GitHub/Shopify webhook handler, a data-ingestion job, a scheduled cron, an internal API, an API-to-API integration. Phrases like "audit my Stripe webhook handler," "review my ingestion job," "is my integration secure," "check this webhook receiver," or "audit this Lambda" all qualify. Covers webhook signature verification, API key / OAuth token handling, outbound-call safety, data egress, idempotency / replay protection, and job authentication, on top of the shared baseline (secrets, SAST, deps, monitoring). Runs safe live probes against a webhook or API base URL (unsigned / tampered / replayed / malformed payloads) and asks before any intrusive probe.
-allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(bundle-audit:*) Bash(govulncheck:*) Bash(openssl:*) Bash(python3:*) Bash(node:*) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(gem install --user-install bundler-audit) Bash(go install golang.org/x/vuln/cmd/govulncheck@latest) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(gitleaks:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(bundle-audit:*) Bash(govulncheck:*) Bash(openssl:*) Bash(python3:*) Bash(node:*) Bash(brew install gitleaks) Bash(go install github.com/gitleaks/gitleaks/v8@latest) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(gem install --user-install bundler-audit) Bash(go install golang.org/x/vuln/cmd/govulncheck@latest) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
 ---
 
 # Vibe-coded backend service security audit
@@ -140,40 +140,50 @@ grep -rE "refresh_token|refreshToken" --include="*.{ts,js,py}" . | head -10
 
 ## 3 — Outbound calls
 
+**Before flagging an outbound call, ask yourself**: is the _credential_ being sent over a
+verified channel? TLS verification disabled means the bearer token, basic-auth header, or API
+key in the request is readable by any network attacker on the path. The severity isn't "TLS is
+broken" — it's "the secret you're sending is now public to anyone in the middle."
+
+**Patterns to flag:**
+
+| Pattern                                                                 | Severity                                                                       |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| TLS verification disabled (`verify=False`, `rejectUnauthorized: false`) | **Critical** in production code paths; **Low** in clearly-marked test fixtures |
+| Cleartext HTTP for any third-party API that carries auth headers        | **High**                                                                       |
+| Error message from outbound call echoed verbatim to client / logs       | **High** — these often contain the request including the API key               |
+
+**Find the surface:**
+
 ```bash
-# TLS verification disabled
 grep -rE "(rejectUnauthorized: false|verify=False|ssl=False|InsecureSkipVerify)" \
   --include="*.{ts,js,py,go}" . | head -10
 
-# HTTP (not HTTPS) base URLs in code or env
 grep -rE "http://(?!localhost|127\.)" --include="*.{ts,js,py,env*}" . | head -10
 ```
 
-Flag:
-
-- TLS verification disabled in production-path code. **Critical**.
-- Cleartext HTTP for any third-party API. **High**.
-- Error messages from outbound calls echoed verbatim to logs or response bodies (these often
-  contain the API key or full request). **High**.
-
 ## 4 — Data egress
 
-What data leaves the service, and where does it go?
+**Before flagging a data-egress finding, ask yourself**: where does this data _actually_ end
+up? `logger.info(req.body)` and `analytics.track(payload)` are both "egress" but with different
+consumers and retention. A request body in a server log retained 30 days is **High**; the same
+data in a customer-facing email is **Critical**.
+
+**Patterns to flag:**
+
+| Pattern                                                                | Severity   |
+| ---------------------------------------------------------------------- | ---------- |
+| Raw request body or response logged in production                      | **High**   |
+| PII forwarded to a third-party (analytics, errors, AI) without DPA ref | **Medium** |
+| Secrets/tokens accidentally included in error captures (Sentry et al.) | **High**   |
+
+**Find the surface:**
 
 ```bash
-# Logging of request/response bodies
 grep -rE "(console\.log|logger\.(info|debug)|print\().*\b(body|payload|data|request|response)\b" \
   --include="*.{ts,js,py}" . | head -20
-
-# PII fields in outbound calls
 grep -rE "(email|phone|ssn|password|token|api_key)" --include="*.{ts,js,py}" . | head -20
 ```
-
-Flag:
-
-- Raw request body logged in production. **High** — logs become a secondary leak vector.
-- PII forwarded to a third-party (analytics, error trackers, AI) without a data-flow comment
-  or DPA reference. **Medium**.
 
 ## 5 — Idempotency and replay safety
 

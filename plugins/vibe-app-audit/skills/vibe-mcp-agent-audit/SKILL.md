@@ -1,7 +1,7 @@
 ---
 name: vibe-mcp-agent-audit
 description: Audit a vibe-coded MCP server or AI agent and produce a markdown report with severity-tagged findings. Use when the user wants to security-review an MCP server (`@modelcontextprotocol/sdk`, `mcp` Python package), a Claude Agent SDK loop, a LangChain/LangGraph agent, or any custom agent exposing tools to an LLM. Phrases like "audit my MCP server," "review my agent's tool surface," "is my LLM app safe," or "check this agent for prompt injection" qualify. Covers tool surface and least-privilege, parameter validation at the tool boundary, prompt-injection (direct and indirect via tool outputs), output sanitization, tool-level authorization, and resource limits — on top of the shared baseline (secrets, SAST, deps, monitoring). Runs safe live probes against a running server / agent endpoint (enumerate tools, missing-param and wrong-type rejection, SSRF) and asks before any intrusive probe.
-allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(node:*) Bash(python3:*) Bash(npx:*) Bash(uvx:*) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(gitleaks:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(node:*) Bash(python3:*) Bash(npx:*) Bash(uvx:*) Bash(brew install gitleaks) Bash(go install github.com/gitleaks/gitleaks/v8@latest) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
 ---
 
 # Vibe-coded MCP server / AI agent security audit
@@ -122,19 +122,23 @@ elsewhere is OK — least-privilege is the lesson.
 
 ## 2 — Parameter validation
 
+**Before flagging a tool parameter, ask yourself**: is the schema _advisory_ (the SDK passes it
+to the LLM as documentation) or _enforced_ (the handler rejects calls that don't match)? Most
+MCP/agent SDKs do the former by default — the schema shapes the LLM's call, but doesn't
+validate the actual args at runtime. The handler must validate again.
+
 Each tool's input schema is contract. The handler must validate against it (don't trust the
-LLM to send well-formed args).
+LLM to send well-formed args, especially under prompt injection).
 
-Flag:
+**Patterns to flag:**
 
-- Tool handlers using `args.path` etc. without schema-level type/format checks. **High**.
-- Type assertions standing in for runtime validation (TypeScript `as`, Python untyped dict
-  access). **Medium**.
-- Paths accepted without canonicalization (`realpath`, `os.path.realpath`) and a containment
-  check against an allowed root. **High**.
-- URLs accepted without scheme allowlist (`http`/`https` only — no `file://`, `gopher://`,
-  `ftp://`). **High**.
-- Numeric inputs without bounds. **Medium**.
+| Pattern                                                                                 | Severity                                                            |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Tool handler using `args.x` without schema-level type/format checks                     | **High**                                                            |
+| TypeScript `as MyType` or Python untyped dict access standing in for runtime validation | **Medium**                                                          |
+| Paths accepted without `realpath` + containment check against an allowed root           | **High**                                                            |
+| URLs accepted without scheme allowlist (`http`/`https` only)                            | **High** — `file://`, `gopher://`, `ftp://` enable SSRF / file read |
+| Numeric inputs without bounds                                                           | **Medium**                                                          |
 
 ## 3 — Prompt injection
 
