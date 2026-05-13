@@ -1,6 +1,6 @@
 ---
 name: vibe-service-audit
-description: Audit a vibe-coded backend service, integration, ingestion job, or webhook handler against a category-specific security checklist and produce a markdown report with severity-tagged findings. Use when the user wants to security-review a non-user-facing service — a Stripe/GitHub/Shopify webhook handler, a data-ingestion job, a scheduled cron, an internal API, an API-to-API integration. Phrases like "audit my Stripe webhook handler," "review my ingestion job," "is my integration secure," "check this webhook receiver," or "audit this Lambda" all qualify. Covers webhook signature verification, API key / OAuth token handling, outbound-call safety, data egress, idempotency / replay protection, and job authentication, on top of the shared baseline (secrets, SAST, deps, monitoring). Runs safe live probes against a webhook or API base URL (unsigned / tampered / replayed / malformed payloads) and asks before any intrusive probe.
+description: Audit a vibe-coded backend service, webhook handler, ingestion job, or integration and produce a severity-tagged markdown report. Use when the user wants to security-review a non-user-facing service — "audit my Stripe webhook," "review my ingestion job," "is my integration secure," "audit this Lambda." Covers webhook signature verification (HMAC/JWS, Stripe/GitHub/Shopify/Twilio), API key and OAuth token handling, outbound-call TLS, data egress, idempotency / replay protection, and job-trigger auth, on top of the shared baseline. Runs safe live probes against a webhook or API base URL (unsigned/tampered/replayed/malformed) and asks before intrusive probes.
 allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(gitleaks:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(bundle-audit:*) Bash(govulncheck:*) Bash(openssl:*) Bash(python3:*) Bash(node:*) Bash(brew install gitleaks) Bash(go install github.com/gitleaks/gitleaks/v8@latest) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(gem install --user-install bundler-audit) Bash(go install golang.org/x/vuln/cmd/govulncheck@latest) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
 ---
 
@@ -98,17 +98,10 @@ or does it run alongside it? A handler that checks the signature but writes to t
 `try` that catches the verification error is unverified in practice. Walk the control flow from
 request entry to first side effect.
 
-Failure modes to flag:
-
-- No signature check at all. **Critical**.
-- Signature checked AFTER the body is parsed and acted on. **Critical** (the signature only
-  helps if it gates the action).
-- Signature check uses a non-constant-time comparison (`===` instead of `crypto.timingSafeEqual`
-  / `hmac.compare_digest`). **High** (timing oracle).
-- Signature secret is hardcoded or in `NEXT_PUBLIC_*` / similar. **Critical**.
-- Custom signature scheme (rolling your own HMAC framing). **High** unless reviewed carefully.
-- No timestamp check → infinite replay window. **High**.
-- Timestamp check window > 15 min. **Medium**.
+The detailed failure-mode catalog (Bug 1–5: body parsed before verify, non-constant-time
+comparison, try/catch-returns-200, replay accepted, wrong secret) lives in
+`webhook-verification.md` Step 3, which you've already read per the MANDATORY load above.
+Apply that catalog to each endpoint found.
 
 ## 2 — API key and OAuth token handling
 

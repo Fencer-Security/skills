@@ -38,6 +38,22 @@ need explicit consent.
   outputs), output sanitization, resource limits. Live: tool enumeration, missing-param /
   wrong-type / oversized-input rejection, SSRF probes.
 
+## How the skills load (for cache efficiency)
+
+Each audit follows the same three-layer load order, which keeps stable content stable across
+invocations and lets a caching harness (e.g., Anthropic prompt caching) place breakpoints
+predictably:
+
+1. **L1 metadata** — `description` fields (~1,200 tokens, always loaded).
+2. **L3 shared references** — `shared/references/baseline.md`,
+   `live-tests-baseline.md`, `report-template.md` (~5,400 tokens, identical across all audits).
+3. **L2 SKILL.md body + L3 category references** — the triggered skill and its conditional
+   references (size varies by category and detection).
+
+The shared L3 files contain no per-invocation values (no timestamps, paths, or task-specific
+content), so they're cache-stable. A harness can cache the metadata + shared L3 block once and
+reuse it across audits within the TTL.
+
 ## What this is not
 
 - Not a replacement for a SAST/DAST/SCA platform. It's one-pass auditing that catches the
