@@ -9,6 +9,7 @@ file defines the rules the skill follows. Each category skill brings its own pro
 At the start of every audit, ask the user once for the runtime target appropriate to the category:
 
 - **webapp**: deployed URL (e.g., `https://app.example.com`).
+- **mobile**: backend API base URL and/or path to a built `.ipa` / `.apk` artifact.
 - **service**: webhook URL or API base URL.
 - **bot**: bot endpoint URL (e.g., the Slack `events_url`).
 - **script**: command + safe-args invocation (the skill will run it in a tmpdir).

@@ -18,6 +18,11 @@ need explicit consent.
 - **[`vibe-webapp-audit`](skills/vibe-webapp-audit/SKILL.md)** — User-facing web apps.
   Supabase RLS / Postgres app-layer access controls, server-side validation, IDOR, security
   headers. Live: anonymous reads, header probes, error-page leakage.
+- **[`vibe-mobile-audit`](skills/vibe-mobile-audit/SKILL.md)** — Mobile apps (Expo, React
+  Native, native iOS / Android). Secret storage (Keychain / Keystore vs AsyncStorage), network
+  security (ATS, cert pinning), deep links and URL schemes, WebView / JS bridges, permissions,
+  backup-included data. Live: backend API probes + IPA/APK bundle inspection for embedded
+  secrets.
 - **[`vibe-service-audit`](skills/vibe-service-audit/SKILL.md)** — Backend services, webhook
   handlers, ingestion jobs, internal APIs. Signature verification, OAuth / API key handling,
   idempotency, replay protection. Live: unsigned / tampered / replayed / malformed payloads.

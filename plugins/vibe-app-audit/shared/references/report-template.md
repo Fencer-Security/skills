@@ -2,15 +2,16 @@
 
 Render findings into this exact shape. Save to working directory as
 `vibe-<category>-audit-<YYYY-MM-DD>-<HHMM>.md` (always include time so same-day re-runs after fixes
-don't overwrite previous reports). `<category>` is one of `webapp`, `service`, `bot`, `script`,
-`mcp-agent`.
+don't overwrite previous reports). `<category>` is one of `webapp`, `mobile`, `service`, `bot`,
+`script`, `mcp-agent`.
 
 ```markdown
 # Security audit: <repo name>
 
-**Date:** <YYYY-MM-DD> **Category:** <webapp | service | bot | script | mcp-agent> **Stack:** <e.g.
-Next.js 14 + Supabase, Express + Postgres, Slack Bolt + Node, Python uv script> **Live target:**
-<url | "stdio: <cmd>" | "http: <url>" | "not tested — no target provided">
+**Date:** <YYYY-MM-DD> **Category:** <webapp | mobile | service | bot | script | mcp-agent>
+**Stack:** <e.g. Next.js 14 + Supabase, Expo + React Native, Express + Postgres, Slack Bolt + Node,
+Python uv script> **Live target:** <url | "stdio: <cmd>" | "http: <url>" | "not tested — no target
+provided">
 
 ## Summary
 

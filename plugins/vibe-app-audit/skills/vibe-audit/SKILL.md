@@ -1,6 +1,6 @@
 ---
 name: vibe-audit
-description: Classify a vibe-coded project (Lovable, Bolt, v0, Replit, Cursor, Claude Code output) by what kind of thing it actually is, then recommend which category-specific audit skill(s) to run. Use this when the user says something generic like "audit my project," "audit this repo," "what security checks should I run on this," "what's in this codebase," or pastes a path without telling you what the app does. Detects user-facing web apps, backend services / webhook handlers, chat bots (Slack/Discord/GitHub), CLI scripts and cron jobs, and MCP servers / AI agents, including hybrids (e.g., a webapp with a Slack-bot endpoint). Recommends `vibe-webapp-audit`, `vibe-service-audit`, `vibe-bot-audit`, `vibe-script-audit`, or `vibe-mcp-agent-audit` with rationale. Does NOT perform an audit itself — only classifies and points; the user invokes the recommended skill(s).
+description: Classify a vibe-coded project (Lovable, Bolt, v0, Replit, Cursor, Claude Code output) by what kind of thing it actually is, then recommend which category-specific audit skill(s) to run. Use this when the user says something generic like "audit my project," "audit this repo," "what security checks should I run on this," "what's in this codebase," or pastes a path without telling you what the app does. Detects user-facing web apps, mobile apps (Expo / React Native / native iOS / native Android), backend services / webhook handlers, chat bots (Slack/Discord/GitHub), CLI scripts and cron jobs, and MCP servers / AI agents, including hybrids (e.g., a webapp with a Slack-bot endpoint). Recommends `vibe-webapp-audit`, `vibe-mobile-audit`, `vibe-service-audit`, `vibe-bot-audit`, `vibe-script-audit`, or `vibe-mcp-agent-audit` with rationale. Does NOT perform an audit itself — only classifies and points; the user invokes the recommended skill(s).
 allowed-tools: Read Grep Glob Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(find:*) Bash(grep:*)
 ---
 
@@ -46,6 +46,10 @@ grep -hE '"(react|next|vite|svelte|solid-js|nuxt|astro|remix)"' package.json 2>/
 # Webapp UI directories
 ls app pages src/pages src/app components src/components 2>/dev/null
 
+# Mobile frameworks → mobile
+grep -hE '"(react-native|expo|@react-native|@expo)"' package.json 2>/dev/null
+find . -maxdepth 4 \( -name "*.xcodeproj" -o -name "Info.plist" -o -name "AndroidManifest.xml" -o -name "pubspec.yaml" \) 2>/dev/null | head -5
+
 # Chat-bot SDKs → bot
 grep -hE '"(@slack/bolt|@slack/web-api|discord\.js|discord\.py|@octokit/webhooks|botbuilder)"' \
   package.json 2>/dev/null
@@ -80,15 +84,16 @@ find . -maxdepth 3 -name "*.sh" -not -path "*/node_modules/*" 2>/dev/null | head
 
 Apply in order. The first match doesn't preclude the others — record everything that matches.
 
-| Signal                                                                                                                | Recommended skill                                          |
-| --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Frontend framework dep present (React/Next/Vite/etc.) AND a UI directory (`app/`, `pages/`, `src/components/`) exists | `vibe-webapp-audit`                                        |
-| Slack/Discord/GitHub bot SDK present, OR a webhook route handler at `/slack/*`, `/discord/*`, `/github/*`             | `vibe-bot-audit`                                           |
-| MCP SDK present (`@modelcontextprotocol/sdk`, `mcp` Python package), OR a `tools/list` handler                        | `vibe-mcp-agent-audit`                                     |
-| LLM SDK present (`anthropic`, `openai`) AND tool-use loop code (no UI)                                                | `vibe-mcp-agent-audit`                                     |
-| Webhook handler with HMAC verification, scheduled jobs, or `/api/*` endpoints AND no UI                               | `vibe-service-audit`                                       |
-| Single file (`.py`, `.ts`, `.sh`) with CLI argument parsing AND no server framework                                   | `vibe-script-audit`                                        |
-| Multiple match — record all that apply                                                                                | List them in priority order (most user-data-exposed first) |
+| Signal                                                                                                                                | Recommended skill                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Frontend framework dep present (React/Next/Vite/etc.) AND a UI directory (`app/`, `pages/`, `src/components/`) exists, NO mobile deps | `vibe-webapp-audit`                                        |
+| `react-native` / `expo` / `@react-native` / `@expo` dep present, OR `*.xcodeproj` / `AndroidManifest.xml` / `pubspec.yaml` found      | `vibe-mobile-audit`                                        |
+| Slack/Discord/GitHub bot SDK present, OR a webhook route handler at `/slack/*`, `/discord/*`, `/github/*`                             | `vibe-bot-audit`                                           |
+| MCP SDK present (`@modelcontextprotocol/sdk`, `mcp` Python package), OR a `tools/list` handler                                        | `vibe-mcp-agent-audit`                                     |
+| LLM SDK present (`anthropic`, `openai`) AND tool-use loop code (no UI)                                                                | `vibe-mcp-agent-audit`                                     |
+| Webhook handler with HMAC verification, scheduled jobs, or `/api/*` endpoints AND no UI                                               | `vibe-service-audit`                                       |
+| Single file (`.py`, `.ts`, `.sh`) with CLI argument parsing AND no server framework                                                   | `vibe-script-audit`                                        |
+| Multiple match — record all that apply                                                                                                | List them in priority order (most user-data-exposed first) |
 
 If nothing matches: ask the user what the repo does. Don't guess.
 
