@@ -1,0 +1,207 @@
+---
+name: vibe-mcp-agent-audit
+description: Audit a vibe-coded MCP server or AI agent and produce a markdown report with severity-tagged findings. Use when the user wants to security-review an MCP server (`@modelcontextprotocol/sdk`, `mcp` Python package), a Claude Agent SDK loop, a LangChain/LangGraph agent, or any custom agent exposing tools to an LLM. Phrases like "audit my MCP server," "review my agent's tool surface," "is my LLM app safe," or "check this agent for prompt injection" qualify. Covers tool surface and least-privilege, parameter validation at the tool boundary, prompt-injection (direct and indirect via tool outputs), output sanitization, tool-level authorization, and resource limits — on top of the shared baseline (secrets, SAST, deps, monitoring). Runs safe live probes against a running server / agent endpoint (enumerate tools, missing-param and wrong-type rejection, SSRF) and asks before any intrusive probe.
+allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(node:*) Bash(python3:*) Bash(npx:*) Bash(uvx:*) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+---
+
+# Vibe-coded MCP server / AI agent security audit
+
+Audits MCP servers (stdio or HTTP) and AI agents (Claude Agent SDK, LangChain, LangGraph,
+custom loops). These share a threat model:
+
+- The **tool surface** is the privilege boundary. An LLM that can invoke a `shell` tool can
+  do anything the user running the agent can do.
+- **Prompt injection** is the dominant runtime vulnerability — user input, fetched web pages,
+  emails, and tool outputs can all carry instructions that override the system prompt.
+- **Parameter validation** is the tool boundary's seatbelt. If a `read_file` tool accepts any
+  path the LLM proposes, that's a file-disclosure vulnerability.
+- **Output sanitization**: the LLM's reply often echoes content; if that content includes
+  secrets pulled from a tool, they leak to the user (or to logs).
+
+## When to use this skill
+
+Use this when the user wants to security-review an MCP server or an AI agent. Examples: a
+filesystem MCP server, a Claude Agent SDK app, a LangChain agent with custom tools.
+
+Don't use this for: chat bots (use `vibe-bot-audit`, even if they call an LLM), user-facing web
+apps that happen to have an "AI feature" (use `vibe-webapp-audit`), or pure prompt-engineering
+review with no code (out of scope).
+
+## Inputs the skill expects
+
+- A path to a local repo or single source file.
+- Optionally, a **runtime target** — either `stdio: <command>` (for MCP stdio servers) or
+  `http: <url>` (for MCP HTTP servers or agent HTTP endpoints).
+
+Ask for the runtime target at the start. If not provided, skip live tests and note this.
+
+## Workflow
+
+```bash
+SKILL_DIR="${CLAUDE_SKILL_DIR:-${SKILL_DIR}}"
+SHARED_DIR="$SKILL_DIR/../../shared"
+# Always reads:
+#   $SHARED_DIR/references/baseline.md
+#   $SHARED_DIR/references/live-tests-baseline.md
+#   $SHARED_DIR/references/report-template.md
+# Conditionally:
+#   $SKILL_DIR/references/mcp-server.md   (if MCP server detected)
+#   $SKILL_DIR/references/agent-loop.md   (if an agent loop detected)
+#   $SKILL_DIR/references/live-tests.md   (if a runtime target is provided)
+```
+
+1. **Detect what kind of thing this is** (~30s — see below).
+2. **Ask for the runtime target.**
+3. **Run the baseline** (`$SHARED_DIR/references/baseline.md`, checks A–D).
+4. **Run the category-specific static checks** (sections 1–6 below). Read the matching
+   reference file.
+5. **Run live tests** if a target was provided. Read `$SHARED_DIR/references/live-tests-baseline.md`
+   then `$SKILL_DIR/references/live-tests.md`.
+6. **Render the report** using `$SHARED_DIR/references/report-template.md`.
+
+### Detect the shape
+
+```bash
+# MCP SDKs
+grep -hE '"@modelcontextprotocol/sdk"' package.json 2>/dev/null
+grep -hE "(mcp|fastmcp)" requirements.txt pyproject.toml 2>/dev/null
+
+# Agent SDKs
+grep -hE '"@anthropic-ai/(claude-agent-sdk|sdk)"|"openai"|"langchain"|"langgraph"' \
+  package.json 2>/dev/null
+grep -hE "(anthropic|openai|langchain|langgraph)" requirements.txt pyproject.toml 2>/dev/null
+
+# Tool registration patterns
+grep -rE "(server\.tool|@mcp\.tool|tools/list|registerTool)" --include="*.{ts,js,py}" . | head -20
+grep -rE "(StructuredTool|@tool|client\.messages.create.*tools=)" \
+  --include="*.{ts,js,py}" . | head -20
+
+# Transport
+grep -rE "(StdioServerTransport|SSEServerTransport|HttpServerTransport)" \
+  --include="*.{ts,js,py}" . | head -10
+```
+
+If it's an MCP server → read `$SKILL_DIR/references/mcp-server.md`.
+If it's an agent loop → read `$SKILL_DIR/references/agent-loop.md`.
+If both (agent that's also an MCP server) → read both.
+
+## 1 — Tool surface
+
+List every tool the server / agent exposes. For each:
+
+- **Name** and one-line description.
+- **Inputs** (parameter schema).
+- **Side effects** (filesystem write? network? subprocess? database?).
+- **Privilege** (does it act as the agent's user, or with a different identity?).
+
+Severity by side effect:
+
+| Side effect                                        | Severity if loosely-validated                        |
+| -------------------------------------------------- | ---------------------------------------------------- |
+| Read filesystem with caller-supplied path          | **High** (file disclosure)                           |
+| Write filesystem with caller-supplied path         | **Critical** (arbitrary write → RCE if writing code) |
+| Subprocess / shell with caller-supplied input      | **Critical** (RCE)                                   |
+| Outbound HTTP with caller-supplied URL             | **High** (SSRF — can reach internal services)        |
+| Database read/write with caller-supplied filter    | **High** (data exposure / corruption)                |
+| Send-message / post-to-channel with caller content | **Medium** (spam / abuse)                            |
+| Pure compute (math, formatting)                    | **Info**                                             |
+
+A tool surface with `shell`, `read_file(any path)`, `fetch_url(any url)`, AND `write_file(any
+path)` is functionally a remote-code-execution kit. Flag this as a finding even if validation
+elsewhere is OK — least-privilege is the lesson.
+
+## 2 — Parameter validation
+
+Each tool's input schema is contract. The handler must validate against it (don't trust the
+LLM to send well-formed args).
+
+Flag:
+
+- Tool handlers using `args.path` etc. without schema-level type/format checks. **High**.
+- Type assertions standing in for runtime validation (TypeScript `as`, Python untyped dict
+  access). **Medium**.
+- Paths accepted without canonicalization (`realpath`, `os.path.realpath`) and a containment
+  check against an allowed root. **High**.
+- URLs accepted without scheme allowlist (`http`/`https` only — no `file://`, `gopher://`,
+  `ftp://`). **High**.
+- Numeric inputs without bounds. **Medium**.
+
+## 3 — Prompt injection
+
+Direct: user input goes straight into the LLM prompt. This is normal for an agent; the issue is
+what the agent can do with it.
+
+Indirect: external content reaches the LLM via tools — a fetched webpage, an email body, a
+file the agent reads. This content can include "ignore previous instructions" payloads that the
+LLM may obey.
+
+Flag:
+
+- A tool returns content from an external source (web fetch, email read, file read) AND that
+  content is fed directly to the LLM with no system-prompt boundary. **High**.
+- System prompt does NOT name external content as untrusted. **Medium**.
+- Agent has tool access to destructive actions (delete, send-email, push) AND processes external
+  content. **High** — indirect prompt injection can trigger those tools.
+- No human-in-the-loop confirmation for destructive tools. **High** for irreversible actions
+  (deletes, payments, public posts).
+
+## 4 — Output sanitization
+
+The LLM's reply is rendered back to the user / client. If the reply contains content the LLM
+read from a tool, secrets in that content leak.
+
+Flag:
+
+- Tool reads a credentials file then the LLM is allowed to quote arbitrary parts of it. **High**.
+- Tool reads database rows including PII / secrets, LLM is asked to "summarize" without
+  scrubbing. **High**.
+- Logs capture full LLM context, including tool outputs that contain secrets. **High**.
+
+## 5 — Tool-level authorization
+
+For MCP servers exposed to multiple clients, or agents accessed by multiple users:
+
+- Is there a per-call authorization layer? Or does the server trust whoever connected?
+- For agents, does the LLM perform any check before invoking a destructive tool, or is it the
+  user's responsibility?
+
+Flag:
+
+- MCP server with destructive tools and no client authentication. **High** if exposed over
+  network; **Low** if stdio-only.
+- Agent that auto-executes tool calls including destructive ones. **High** if irreversible.
+- "Confirmation step" implemented as "the LLM should ask" (the LLM is non-deterministic and
+  can be prompted to skip the check). **High**.
+
+## 6 — Resource limits
+
+```bash
+# Look for guards on agent loops
+grep -rE "(max_iterations|max_steps|max_tokens|maxTurns|MAX_LOOP)" \
+  --include="*.{ts,js,py}" . | head -10
+
+# Recursion depth
+grep -rE "(setMaxListeners|stack.*limit|sys\.setrecursionlimit)" \
+  --include="*.{ts,js,py}" . | head -10
+```
+
+Flag:
+
+- Agent loop with no maximum-iterations guard. **Medium** (infinite-loop / budget burn).
+- Tool that recurses (e.g., a `list_all_files` that doesn't limit depth) — combined with an LLM,
+  this can hang the agent or balloon token spend. **Low**.
+- No token budget per session. **Low** (cost concern, not security per se, but flag for SaaS).
+
+## Producing the report
+
+Read `$SHARED_DIR/references/report-template.md`. Save as
+`vibe-mcp-agent-audit-<YYYY-MM-DD>-<HHMM>.md`. Tell the user the exact path.
+
+## What this skill is NOT
+
+- Not a prompt-engineering review. The skill audits the code surrounding the LLM, not the
+  prompt itself.
+- Not a model-capability review. "What can Claude do" is out of scope; "what can the agent do
+  via tools" is in scope.
+- Not a jailbreak audit. The skill doesn't try to bypass safety training; it audits the host
+  application's controls.

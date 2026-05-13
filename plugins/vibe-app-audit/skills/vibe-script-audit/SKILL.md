@@ -1,0 +1,207 @@
+---
+name: vibe-script-audit
+description: Audit a vibe-coded script or CLI tool — one-shot Python/TypeScript/Bash run locally or as a scheduled cron — against a category-specific security checklist and produce a markdown report with severity-tagged findings. Use when the user wants to security-review a script they run manually or schedule. Phrases like "audit my migration script," "review this cron job," "is this CLI safe to run," "check my data pipeline script," or "audit this bash script" all qualify. Covers argument handling (argparse / click / yargs), subprocess and shell-out (`shell=True`, command injection), file I/O (path traversal, symlink races), credential file hygiene (permissions, source), network calls (TLS verification), and blast radius (what the script touches if run with bad input), on top of the shared baseline. Runs safe live probes against the script in an isolated tmpdir (path-traversal args, shell-metachar args, bad credfile permissions, missing credfile) and asks before exercising the main path against fixture data.
+allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(stat:*) Bash(opengrep:*) Bash(semgrep:*) Bash(pip-audit:*) Bash(bundle-audit:*) Bash(govulncheck:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(mktemp:*) Bash(chmod:*) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(gem install --user-install bundler-audit) Bash(go install golang.org/x/vuln/cmd/govulncheck@latest) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+---
+
+# Vibe-coded script security audit
+
+Audits scripts and CLI tools — one-shot Python/TypeScript/Bash files an operator runs locally
+or schedules as cron. Different threat model from web apps: external attack surface is low (the
+script isn't on the public internet), but blast radius is high because the script usually runs
+as a privileged user (the operator), often with secrets in scope, and touches files / databases
+/ third-party APIs directly.
+
+The headline failure modes:
+
+- The script takes arguments and shells out — command injection via argument.
+- The script reads a path from an argument and reads/writes without validating it — path
+  traversal, symlink races.
+- The script reads a credential from a file with overly permissive permissions, or from an
+  unencrypted source.
+- The script has no `--dry-run` for a destructive action, so a typo destroys data.
+
+## When to use this skill
+
+Use this when the user wants to security-review a script. Examples: a Python migration script,
+a Bash deploy script, a Node.js data-pipeline tool, a one-shot CLI that calls an API.
+
+Don't use this for: user-facing web apps (use `vibe-webapp-audit`), webhook handlers / services
+(use `vibe-service-audit`), bots (use `vibe-bot-audit`), or MCP servers / AI agents (use
+`vibe-mcp-agent-audit`).
+
+## Inputs the skill expects
+
+- A path to a local repo or single script file.
+- Optionally, a **safe invocation command** — for live probes, the skill needs to know how to
+  invoke the script. The user should provide a command line they consider safe (e.g., `python
+migrate.py --help`) so the skill can derive variations from it.
+
+Ask for the safe invocation at the start. If not provided, skip live tests and note this.
+
+## Workflow
+
+```bash
+SKILL_DIR="${CLAUDE_SKILL_DIR:-${SKILL_DIR}}"
+SHARED_DIR="$SKILL_DIR/../../shared"
+# Always reads:
+#   $SHARED_DIR/references/baseline.md
+#   $SHARED_DIR/references/live-tests-baseline.md
+#   $SHARED_DIR/references/report-template.md
+# Conditionally:
+#   $SKILL_DIR/references/live-tests.md  (if a safe invocation is provided)
+```
+
+1. **Detect the language and entry points** (~30s).
+2. **Ask for the safe invocation command.**
+3. **Run the baseline** (`$SHARED_DIR/references/baseline.md`, checks A–D — for a single script,
+   deps and SAST may be thin; record what was checked).
+4. **Run the category-specific static checks** (sections 1–6 below).
+5. **Run live tests** if a safe invocation was provided. Live tests run in an isolated
+   `mktemp -d` — never against real data.
+6. **Render the report** using `$SHARED_DIR/references/report-template.md`.
+
+### Detect the script shape
+
+```bash
+# Entry points
+grep -lE 'if __name__ == .__main__.' --include="*.py" -r . | head -10
+find . -maxdepth 3 -name "*.sh" -not -path "*/node_modules/*" | head -10
+grep -lE '#!/usr/bin/env' . -r 2>/dev/null | head -10
+
+# CLI parsing libraries
+grep -hE "(argparse|click|typer|fire)" --include="*.py" -r . | head -5
+grep -hE '"(commander|yargs|meow|cac|clipanion)"' package.json 2>/dev/null
+```
+
+## 1 — Argument handling
+
+Look at how arguments reach the rest of the code.
+
+```bash
+# Python: argparse
+grep -rE "add_argument" --include="*.py" . | head -20
+
+# Click / Typer
+grep -rE "@click\.(option|argument)|@app\.command" --include="*.py" . | head -10
+
+# Node: commander/yargs
+grep -rE "\.argument|\.option" --include="*.{ts,js}" . | head -20
+
+# Bash: $1, $2, "$@"
+grep -nE '\$\{?[0-9@\*]\}?|\$@|\$\*' --include="*.sh" -r . | head -20
+```
+
+Flag:
+
+- Arguments accepting file paths without basename/realpath normalization → path traversal risk.
+- Arguments accepting URLs that the script will fetch and `eval` or shell-out with. **Critical**.
+- Arguments concatenated into shell commands. **Critical** (see section 2).
+- No `--help` text or examples for destructive flags. **Low** (UX, not security, but flag).
+
+## 2 — Subprocess and shell-out
+
+```bash
+# Python
+grep -rnE "subprocess\.(run|call|Popen|check_output)|os\.(system|popen)" --include="*.py" . | head -30
+grep -rnE "shell=True" --include="*.py" . | head -20
+
+# Node
+grep -rnE "(exec|execSync|spawn|spawnSync|child_process)" --include="*.{ts,js}" . | head -20
+
+# Bash — anything that uses unquoted variables in commands
+grep -rnE 'eval|\$\(' --include="*.sh" . | head -20
+```
+
+Flag:
+
+- `subprocess.run(..., shell=True)` with any user-controlled input. **Critical**.
+- `exec()` / `execSync()` with string concatenation. **Critical**.
+- Bash `eval` of user input. **Critical**.
+- Unquoted variables in shell commands (`rm $path` instead of `rm "$path"`). **High**.
+
+Safe patterns to confirm:
+
+- `subprocess.run(["cmd", arg1, arg2])` (list form, no shell). OK.
+- `execFile(cmd, [arg1, arg2])` in Node. OK.
+
+## 3 — File I/O
+
+```bash
+# Path joining and traversal-prone patterns
+grep -rnE "open\(.*\+|os\.path\.join.*input|join\(.*req" --include="*.py" . | head -20
+grep -rnE "(readFile|writeFile|fs\.).*\+.*argv" --include="*.{ts,js}" . | head -20
+
+# Symlink-related calls
+grep -rnE "(os\.symlink|fs\.symlink|os\.readlink|fs\.lstat|os\.lstat)" \
+  --include="*.{ts,js,py}" . | head -10
+```
+
+Flag:
+
+- Path constructed by string concatenation of user-supplied input. **High** (traversal).
+- Writes to `/tmp/<predictable-name>` without `mkstemp` / `mktemp` — TOCTOU race. **Medium**.
+- Follows symlinks when writing to a user-controlled path (no `O_NOFOLLOW` / `lstat` check).
+  **Medium**.
+
+## 4 — Credential file hygiene
+
+```bash
+# Where does the script read secrets from?
+grep -rnE "(open|read|load).*\.(json|yaml|toml|env|secret|key|pem)" --include="*.{ts,js,py,sh}" .
+grep -rnE "os\.environ|process\.env" --include="*.{ts,js,py}" . | head -20
+
+# Permission checks on credentials before reading?
+grep -rnE "(stat|st_mode|access\()" --include="*.{ts,js,py}" . | head -10
+```
+
+Flag:
+
+- Reads `~/.aws/credentials` / `~/.config/.../credentials` without checking file mode is owner-
+  only. **Low** (defense-in-depth; the OS provides some protection).
+- Writes a credfile with mode 0644 (world-readable). **High**.
+- Reads a credfile from a path supplied via argument with no normalization. **Medium**.
+
+## 5 — Network calls
+
+```bash
+# TLS verification disabled
+grep -rnE "(verify=False|rejectUnauthorized: false|InsecureSkipVerify|disable.*tls)" \
+  --include="*.{ts,js,py}" . | head -10
+
+# HTTP (not HTTPS) base URLs
+grep -rnE "http://(?!localhost|127\.)" --include="*.{ts,js,py}" . | head -10
+```
+
+Flag the same patterns as service audit: TLS verification disabled in non-test code path is
+**Critical**.
+
+## 6 — Blast radius
+
+Read the script top-to-bottom and identify the "damage actions":
+
+- File deletion / mass file modification.
+- Database `DROP`, `TRUNCATE`, mass `UPDATE` / `DELETE` without `WHERE`.
+- Sending emails / messages.
+- Calls to third-party APIs with side effects (charging cards, deleting accounts).
+
+For each, check:
+
+- Is there a `--dry-run` / `--confirm` flag, default to dry-run? Missing on a destructive
+  script: **High**.
+- Is there a confirmation prompt (`Are you sure?`) before destructive action? Missing on a
+  one-shot script run manually: **Medium**.
+- Does the script log what it did, where? Logs should make recovery possible. Missing audit
+  trail on a destructive script: **Medium**.
+
+## Producing the report
+
+Read `$SHARED_DIR/references/report-template.md`. Save as
+`vibe-script-audit-<YYYY-MM-DD>-<HHMM>.md`. Tell the user the exact path.
+
+## What this skill is NOT
+
+- Not a code review. Logic, structure, ergonomics are out of scope.
+- Not a runtime profiler. Performance issues are out of scope.
+- Not a privilege-escalation audit of the host. The script is reviewed; the host setup is the
+  operator's responsibility.

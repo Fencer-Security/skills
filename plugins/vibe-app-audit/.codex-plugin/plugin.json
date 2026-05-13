@@ -1,7 +1,7 @@
 {
   "name": "vibe-app-audit",
-  "description": "Security audit skills for AI-generated web apps (Lovable, v0, Bolt, Cursor output).",
-  "version": "0.1.0",
+  "description": "Security audit skills for vibe-coded projects — user-facing webapps, backend services, chat bots, scripts, and MCP servers / AI agents.",
+  "version": "0.2.0",
   "author": {
     "name": "Fencer",
     "url": "https://fencer.dev"
@@ -17,6 +17,14 @@
     "lovable",
     "v0",
     "bolt",
-    "cursor"
+    "cursor",
+    "replit",
+    "slack-bot",
+    "discord-bot",
+    "github-app",
+    "webhook",
+    "mcp",
+    "agent",
+    "script"
   ]
 }

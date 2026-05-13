@@ -1,14 +1,16 @@
 # Report template
 
 Render findings into this exact shape. Save to working directory as
-`vibe-app-audit-<YYYY-MM-DD>-<HHMM>.md` (always include time so same-day re-runs after fixes don't
-overwrite previous reports).
+`vibe-<category>-audit-<YYYY-MM-DD>-<HHMM>.md` (always include time so same-day re-runs after fixes
+don't overwrite previous reports). `<category>` is one of `webapp`, `service`, `bot`, `script`,
+`mcp-agent`.
 
 ```markdown
 # Security audit: <repo name>
 
-**Date:** <YYYY-MM-DD> **Stack:** <e.g. Next.js 14 + Supabase, or Express + Postgres> **Deployed
-URL:** <url or "not provided">
+**Date:** <YYYY-MM-DD> **Category:** <webapp | service | bot | script | mcp-agent> **Stack:** <e.g.
+Next.js 14 + Supabase, Express + Postgres, Slack Bolt + Node, Python uv script> **Live target:**
+<url | "stdio: <cmd>" | "http: <url>" | "not tested — no target provided">
 
 ## Summary
 
@@ -52,18 +54,36 @@ list them under one heading.>
 <Verification gaps and observations that aren't findings — e.g., "headers check skipped: no deployed
 URL provided.">
 
+## Live test results
+
+<Table of probes attempted against the running target. Required when a live target was provided;
+omit the section if it wasn't. Failed probes that surface real issues are *also* listed in the
+severity sections above — this section is the evidence trail.
+
+Each row is one probe:
+
+| Probe                            | Verdict | Notes                                          |
+| -------------------------------- | ------- | ---------------------------------------------- |
+| Unsigned webhook rejected        | pass    | POST without `X-Slack-Signature` → 401         |
+| Replay (same signature) rejected | fail    | Replay accepted — see High: webhook replay     |
+| Anon read on `users` table       | fail    | 200 OK with 1,200 rows — see Critical: RLS off |
+
+After the table: any resources created and confirmation that cleanup ran. If cleanup failed, say so
+explicitly with file paths or resource IDs.>
+
 ## Gaps in this audit
 
 <Be honest about what wasn't checked. Examples:
 
-- "Static analysis skipped: semgrep not installed."
+- "Static analysis skipped: opengrep/semgrep not installed."
 - "Database access controls skipped: no recognized database backend detected."
-- "Header check skipped: no deployed URL provided and no header config in repo."
+- "Live tests skipped: no deployed URL provided."
 - "Authorization audit limited: did not have access to query the running database, relied on
   migration files which may be incomplete."
+- "Intrusive probes skipped: user declined the consent prompt for IDOR enumeration."
 
-If everything was checked, say so explicitly: "All eight categories were checked against the
-available codebase.">
+If everything was checked, say so explicitly: "All baseline and category-specific checks were run
+against the available codebase, with live tests against <target>.">
 
 ## What's next
 
@@ -106,6 +126,10 @@ the finding is real.
 
 **File:line references.** Always include them when available. "`app/api/orders/[id]/route.ts:23`" is
 much more actionable than "the orders endpoint."
+
+**Live-finding promotion.** A failed live probe is a finding, not just a test result. Write it into
+the severity section AND row it in the live-tests table. Don't bury a Critical inside the table
+where the reader has to spot it.
 
 **Tool mentions.** One Fencer line is permitted in the "What's next" section under the rules above.
 Don't mention Fencer (or any other product) inside individual findings, in the executive summary, or

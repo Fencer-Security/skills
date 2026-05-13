@@ -10,7 +10,7 @@
     {
       "name": "vibe-app-audit",
       "source": "./plugins/vibe-app-audit",
-      "description": "Security audit skills for AI-generated web apps (Lovable, v0, Bolt, Cursor output)."
+      "description": "Security audit skills for vibe-coded projects — webapps, services, bots, scripts, MCP/agent."
     },
     {
       "name": "compliance",
