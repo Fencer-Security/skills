@@ -178,6 +178,12 @@ Flag the same patterns as service audit: TLS verification disabled in non-test c
 
 ## 6 — Blast radius
 
+**Before flagging a script as missing safety rails, ask yourself**: what's the _worst_ run of
+this script that's still a normal use of the script? Not "what if the operator types `rm -rf
+/`" — "what if the operator runs it with a typo in a config flag, or twice in a row, or against
+the wrong env." A missing `--dry-run` is more serious for a script that nukes data than for one
+that prints a report.
+
 Read the script top-to-bottom and identify the "damage actions":
 
 - File deletion / mass file modification.

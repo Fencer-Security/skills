@@ -36,6 +36,10 @@ Every probe is classified as **safe** or **intrusive**.
 - Anonymous reads against documented public endpoints (e.g., the Supabase anon key against tables,
   which exists precisely to be exercised this way).
 
+**Before asking for intrusive-probe consent, ask yourself**: has the user named a test environment,
+or am I about to send adversarial payloads to whatever URL they pasted? If the target's environment
+hasn't been confirmed, ask about _that_ first, not about consent for the probe.
+
 **Intrusive probes** require explicit consent before each batch:
 
 - Any request that writes, mutates, or could leave state behind.

@@ -91,22 +91,39 @@ database backend detected" and move on.
 
 ## 1 — Database access controls
 
-Backend-specific. **Read the relevant reference before proceeding:**
+Backend-specific. **MANDATORY** — based on what was detected:
 
-- Supabase detected → read `$SKILL_DIR/references/supabase.md` and follow the RLS audit
-  procedure there.
-- Plain Postgres + app framework → read `$SKILL_DIR/references/postgres.md` and follow the
-  access-control audit there.
-- Both → read both.
-- Neither → record "skipped: no recognized database backend" and move on.
+- **Supabase detected** → **MANDATORY: read `$SKILL_DIR/references/supabase.md` in full before
+  proceeding.** Do NOT load `postgres.md` for this path.
+- **Plain Postgres + app framework** → **MANDATORY: read `$SKILL_DIR/references/postgres.md` in
+  full before proceeding.** Do NOT load `supabase.md` for this path.
+- **Both detected** (rare) → read both, in the order above.
+- **Neither** → record "skipped: no recognized database backend" and move on. Do NOT load
+  either reference.
 
 Don't try to do this check from memory — the per-backend procedures are specific and the
 reference files exist for a reason.
 
 ## 2 — Server-side input validation
 
-The failure mode: forms validate in the browser, but the API endpoint accepts whatever the
-client sends.
+**The failure mode**: forms validate in the browser, but the API endpoint accepts whatever the
+client sends. The browser is attacker-controlled — its validation is UX, not security.
+
+**Before flagging, ask yourself**: is the boundary between "user input" and "trusted data"
+crossed _before_ a validator runs? If yes, anything downstream is on shaky ground regardless of
+how clean the code looks.
+
+**Patterns to flag** (in priority order):
+
+| Pattern                                                                 | Severity                                                                       |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Type assertions (`as MyType`) standing in for runtime validation        | **High** — false sense of security is worse than none; types vanish at runtime |
+| `req.body.x` used directly in a DB query or response with no `.parse()` | **High** if it writes / returns user data, **Medium** if read-only             |
+| Validation present only in the React form component, not in the route   | **High** — bypassed by any non-browser client                                  |
+| File upload endpoint with no size / type / content check                | **High** — DoS + RCE surface depending on processor                            |
+| Numeric input without bounds, string without length cap                 | **Medium** — DoS / overflow vector                                             |
+
+**Find the surface** (grep is illustration, not the check):
 
 ```bash
 find . -path ./node_modules -prune -o \
@@ -117,21 +134,8 @@ grep -hE '"(zod|yup|joi|valibot|class-validator|pydantic|marshmallow)"' \
   package.json pyproject.toml requirements.txt 2>/dev/null
 ```
 
-For each handler found, open it and look for: does it parse/validate the request body before
-using it, or does it pass `req.body` / `request.json()` straight into a database call or business
-logic?
-
-**Patterns to flag:**
-
-- `req.body.x` used directly in a query or response without a `.parse()` / `.validate()` first.
-- Type assertions (`as MyType`) standing in for validation — TypeScript types vanish at runtime.
-- Validation only in the React form component, not in the route handler.
-- File upload endpoints with no size, type, or content checks.
-
-**Severity:** Missing validation on an endpoint that writes to the database or returns user
-data: **High**. Missing validation on a read-only endpoint with no user-controlled query:
-**Medium**. Type-assertion-only "validation": **High** (false sense of security is worse than
-none).
+For each handler found, open it and walk the data path from `req.body` / `request.json()` to
+its first use. Apply the table above.
 
 ## 3 — Authorization (IDOR)
 
@@ -144,6 +148,11 @@ Like section 1, this depends on the backend.
 Read the relevant reference and follow it. The headline failure mode is the same across
 backends: the code checks "is the user authenticated" but not "does this user own the row they're
 asking about." IDOR (insecure direct object reference) is the canonical AI-coded-app bug.
+
+**Before flagging an IDOR, ask yourself**: where does the resource owner identity come from?
+The authenticated session (good) or the request (bad)? If `userId` comes from `req.body` /
+query string / a JWT claim the client controls, the check is theatrical. If it comes from a
+session lookup the server alone controls, it's real.
 
 **Severity guide** (apply regardless of backend; the references show the patterns):
 

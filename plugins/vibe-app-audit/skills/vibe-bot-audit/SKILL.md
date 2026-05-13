@@ -77,12 +77,18 @@ grep -rlE "x-slack-signature|X-Signature-Ed25519|x-hub-signature|x-ms-signature"
 ls slack.json app.json bot.json manifest.json 2>/dev/null
 ```
 
-Pick the matching reference:
+**MANDATORY**: pick the matching reference and read it in full before proceeding. Do NOT load
+references for platforms not detected.
 
-- Slack detected → read `$SKILL_DIR/references/slack.md`.
-- Discord detected → read `$SKILL_DIR/references/discord.md`.
-- GitHub bot/App detected → read `$SKILL_DIR/references/github.md`.
-- Teams or other → fall back to general bot principles; note in report.
+- Slack detected → **MANDATORY: read `$SKILL_DIR/references/slack.md` in full.** Do NOT load
+  `discord.md` or `github.md`.
+- Discord detected → **MANDATORY: read `$SKILL_DIR/references/discord.md` in full.** Do NOT
+  load `slack.md` or `github.md`.
+- GitHub bot/App detected → **MANDATORY: read `$SKILL_DIR/references/github.md` in full.** Do
+  NOT load `slack.md` or `discord.md`.
+- Teams or other → fall back to general bot principles; note in report. Do NOT load any
+  platform reference.
+- Multi-platform bot (rare) → read each detected platform's reference, no others.
 
 ## 1 — Signature verification
 
@@ -101,6 +107,11 @@ across platforms):
 - The signing secret is hardcoded or in a committed file. **Critical**.
 
 ## 2 — OAuth scopes
+
+**Before flagging a scope as over-broad, ask yourself**: what does the bot _do_? If the README
+or recent commits say "posts in #releases when a deploy finishes," then `channels:read`,
+`users:read.email`, or `files:read` are over-broad regardless of how the manifest reads. Match
+scopes to the bot's actual surface, not its declared one.
 
 For each scope the bot requests, ask: "does the bot need this?"
 

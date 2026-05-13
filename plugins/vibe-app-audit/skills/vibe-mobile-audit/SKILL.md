@@ -82,20 +82,29 @@ find . -maxdepth 4 -name "AndroidManifest.xml" -o -name "build.gradle" -o -name 
 ls pubspec.yaml 2>/dev/null
 ```
 
-Choose references:
+**MANDATORY** — pick references based on detection and read each in full before proceeding.
+Do NOT load references for platforms not detected.
 
-- React Native or Expo detected → read `$SKILL_DIR/references/react-native-expo.md`.
-- iOS project / `Info.plist` found → read `$SKILL_DIR/references/ios.md`.
-- Android project / `AndroidManifest.xml` found → read `$SKILL_DIR/references/android.md`.
-- Flutter → no dedicated reference yet; apply general principles and note in report that
-  Flutter-specific coverage is thin.
-
-React Native / Expo apps usually have both iOS and Android sub-projects; read all three relevant
-references.
+- **Pure native iOS** (no `react-native` / `expo` in `package.json`) → **MANDATORY:
+  `$SKILL_DIR/references/ios.md`**. Do NOT load `android.md` or `react-native-expo.md`.
+- **Pure native Android** → **MANDATORY: `$SKILL_DIR/references/android.md`**. Do NOT load
+  `ios.md` or `react-native-expo.md`.
+- **React Native or Expo** → **MANDATORY: all three of
+  `$SKILL_DIR/references/react-native-expo.md`, `$SKILL_DIR/references/ios.md`,
+  `$SKILL_DIR/references/android.md`**. RN/Expo apps have both platform sub-projects.
+- **Flutter** → no dedicated reference yet; apply general principles. Do NOT load any reference.
+  Note Flutter-specific coverage as a gap in the report.
 
 ## 1 — Secret storage
 
-The headline failure mode: tokens, API keys, and PII written to the wrong storage API.
+**The headline failure mode**: tokens, API keys, and PII written to the wrong storage API.
+The OS provides secure storage; the vibe-coded mistake is reaching for the easy API and putting
+auth tokens there.
+
+**Before flagging, ask yourself**: is what's being stored a _credential_ (auth token, refresh
+token, API key, password), an _identifier_ (user ID, device ID), or a _preference_ (theme,
+last-opened tab)? Only credentials and credential-equivalents warrant High; identifiers are Low;
+preferences are not findings.
 
 | Platform     | Wrong (easy)                                        | Right                                                    |
 | ------------ | --------------------------------------------------- | -------------------------------------------------------- |
@@ -160,6 +169,11 @@ iOS: read the App Transport Security block in `Info.plist`. Android: read
 
 Deep links let another app (or a browser, or a phishing email) launch yours with a URL. If the
 handler trusts query parameters as authority, that's an authentication-bypass.
+
+**Before flagging a deep link handler, ask yourself**: who is the implied trust source of the
+URL parameters? If the handler treats `?userId=42` as proof of identity, the user has been
+impersonated. If it treats it as a hint and re-verifies against the authenticated session, the
+parameter is harmless.
 
 ```bash
 # iOS — URL schemes registered in Info.plist

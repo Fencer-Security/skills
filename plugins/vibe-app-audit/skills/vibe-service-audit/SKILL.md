@@ -85,8 +85,18 @@ grep -hE "(axios|got|node-fetch|undici|requests|httpx|aiohttp)" \
 ## 1 — Webhook signature verification
 
 For every webhook endpoint, the handler MUST verify a signature header before reading the body.
-Read `$SKILL_DIR/references/webhook-verification.md` for HMAC, JWS, and platform-specific
-patterns (Stripe, GitHub, Shopify, Square, etc.).
+
+- **At least one webhook endpoint found** → **MANDATORY: read
+  `$SKILL_DIR/references/webhook-verification.md` in full before flagging anything in this
+  section.** Covers HMAC, JWS, and platform-specific patterns (Stripe, GitHub, Shopify, Square,
+  Twilio).
+- **No webhook endpoint found** (pure ingestion / scheduled-job service) → Do NOT load
+  `webhook-verification.md`. Skip this section and continue.
+
+**Before flagging a webhook handler, ask yourself**: does the verification _gate_ the action,
+or does it run alongside it? A handler that checks the signature but writes to the DB inside a
+`try` that catches the verification error is unverified in practice. Walk the control flow from
+request entry to first side effect.
 
 Failure modes to flag:
 
@@ -102,24 +112,31 @@ Failure modes to flag:
 
 ## 2 — API key and OAuth token handling
 
+**The failure mode**: a credential the service holds for a third-party API ends up readable
+from an unexpected source — a committed config file, a log line, a world-readable token cache,
+or an OAuth refresh that hands back a long-lived access token nobody rotates.
+
+**Before flagging, ask yourself**: if this credential leaked, what's the blast radius? A Stripe
+restricted key with one-resource scope is different from a Stripe live key with full account
+access. Severity tracks scope, not just exposure.
+
+**Patterns to flag**:
+
+| Pattern                                                                  | Severity     |
+| ------------------------------------------------------------------------ | ------------ |
+| API key read from a non-env source (hardcoded, JSON-in-repo, unauth URL) | **Critical** |
+| Tokens written to a world-readable file (mode 0644 or wider)             | **High**     |
+| Tokens logged on success or failure handlers                             | **High**     |
+| OAuth refresh tokens stored alongside access tokens with no rotation     | **Medium**   |
+| OAuth scopes broader than the service needs                              | **Medium**   |
+
+**Find the surface**:
+
 ```bash
-# Where are API keys read from?
 grep -rE "process\.env\.|os\.environ\." --include="*.{ts,js,py}" . | head -30
-
-# Tokens written to the filesystem
 grep -rE "(writeFile|fs\.write|open\(.*['\"]w)" --include="*.{ts,js,py}" . | grep -iE "token|key|secret" | head -10
-
-# OAuth token refresh logic
 grep -rE "refresh_token|refreshToken" --include="*.{ts,js,py}" . | head -10
 ```
-
-Flag:
-
-- API keys read from a non-environment source (hardcoded, JSON config in repo, fetched
-  unauthenticated from a URL). **Critical**.
-- Tokens written to a world-readable file. **High**.
-- OAuth refresh tokens stored alongside access tokens with no rotation logic. **Medium**.
-- OAuth scopes broader than the service needs. **Medium**.
 
 ## 3 — Outbound calls
 

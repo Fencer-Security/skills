@@ -81,11 +81,21 @@ grep -rE "(StdioServerTransport|SSEServerTransport|HttpServerTransport)" \
   --include="*.{ts,js,py}" . | head -10
 ```
 
-If it's an MCP server → read `$SKILL_DIR/references/mcp-server.md`.
-If it's an agent loop → read `$SKILL_DIR/references/agent-loop.md`.
-If both (agent that's also an MCP server) → read both.
+**MANDATORY** based on detection:
+
+- **MCP server only** (server exposes tools to clients, no autonomous agent loop) →
+  **MANDATORY: read `$SKILL_DIR/references/mcp-server.md` in full.** Do NOT load `agent-loop.md`.
+- **Agent loop only** (uses LLM SDK with tools, no MCP surface) → **MANDATORY: read
+  `$SKILL_DIR/references/agent-loop.md` in full.** Do NOT load `mcp-server.md`.
+- **Both** (agent that's also an MCP server, or MCP server with its own internal agent) →
+  read both, MCP first.
 
 ## 1 — Tool surface
+
+**Before classifying a tool, ask yourself**: if the LLM were jailbroken or prompt-injected,
+what's the worst this _one_ tool lets the attacker do? "Read a file" sounds benign until the
+path is unconstrained. "Fetch a URL" sounds benign until `file://` or `http://169.254.169.254`
+work. Classify by the _worst legal use_ of the tool, not the intended one.
 
 List every tool the server / agent exposes. For each:
 
