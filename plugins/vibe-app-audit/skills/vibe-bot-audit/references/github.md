@@ -17,6 +17,17 @@ The threat model differs:
 
 ## Signature verification
 
+**Before flagging a GitHub receiver, ask yourself**: which secret is being HMAC'd? GitHub Apps have
+_two_ per-App secrets — the **webhook secret** (for signature verification) and the **private key**
+(.pem, for JWT signing to mint installation tokens). Using the private key for HMAC verification
+doesn't work and indicates the developer doesn't understand the model.
+
+**NEVER use the App private key for webhook HMAC verification.** They're separate credentials with
+separate purposes. If `crypto.createHmac("sha256", privateKey, ...)` appears in a webhook handler,
+the verification is broken (the HMAC won't match real GitHub deliveries) AND the private key is
+being misused. **Severity: High** for the misuse; **Critical** if the broken check is wrapped in
+try/catch that returns 200.
+
 GitHub signs webhook payloads with HMAC-SHA256 using the per-App webhook secret. Header is
 `X-Hub-Signature-256: sha256=<hex>` (the legacy `X-Hub-Signature` with SHA-1 is deprecated).
 

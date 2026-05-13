@@ -6,6 +6,26 @@ The headline failure mode: **the receiver reads `req.body` and acts on it withou
 request came from the expected sender.** Any HTTPS endpoint on the public internet can be called by
 anyone; the signature is what proves the caller is who they say they are.
 
+## Before flagging — the meta-NEVER
+
+**NEVER catch a signature-verification error silently and return 200.** This is the worst possible
+state: the sender keeps delivering (no failures from their side), no monitoring fires, and the
+attacker's forged requests are processed. A handler that explicitly throws on verification failure
+and lets the framework return 4xx is _better_ than one that catches and returns 2xx.
+
+Look for this pattern specifically:
+
+```ts
+try {
+    verifySignature(req); // throws if bad
+    handleEvent(req.body);
+} catch (e) {
+    res.status(200).send("ok"); // BUG: hides the failure
+}
+```
+
+Severity: **Critical** — the endpoint is functionally unauthenticated, but appears to "work."
+
 ## Step 1 — Find every webhook endpoint
 
 ```bash

@@ -5,6 +5,16 @@ it uses **ed25519** asymmetric signatures, not HMAC.
 
 ## Signature verification — ed25519
 
+**Before flagging a Discord receiver, ask yourself**: did someone implement signature verification
+from memory? Discord is the _only_ major platform that signs with ed25519 (asymmetric) instead of
+HMAC (symmetric). Code that does `crypto.createHmac(...)` for Discord verification is wrong by
+construction — the signature will never validate, so the developer usually disables the check,
+leaving the endpoint open.
+
+**NEVER use HMAC for Discord interaction verification — Discord uses ed25519.** If you see
+`crypto.createHmac` or `hmac.new` near a Discord handler, that's a critical misimplementation, even
+if it appears to "work" because the check is bypassed.
+
 For HTTP interactions (slash commands, components), Discord signs each request with the bot's
 ed25519 private key. The receiver must:
 

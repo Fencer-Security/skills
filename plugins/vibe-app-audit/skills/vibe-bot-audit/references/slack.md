@@ -5,7 +5,17 @@ scopes) both have Slack-specific patterns covered here.
 
 ## Signature verification — the Slack signing secret
 
-Slack signs every request to your Events / Interactivity / Slash-command endpoints with HMAC- SHA256
+**Before flagging a Slack receiver, ask yourself**: does any HTTP middleware run _before_ the
+signature check? Slack-Bolt verifies signatures against the raw body — if Express's
+`bodyParser.json()` or Fastify's automatic JSON parsing runs first, the body is already mutated and
+verification will silently fail (or, worse, succeed against a tampered representation).
+
+**NEVER mount `bodyParser.json()` / `express.json()` before the Bolt receiver.** This is the single
+most common Slack-bot bug in vibe-coded apps. Verification appears to work in tests (where the test
+client sends raw JSON Bolt re-parses) but breaks on real Slack deliveries. **Severity: Critical** —
+the signature header is present and the code "checks" it, but every request is accepted.
+
+Slack signs every request to your Events / Interactivity / Slash-command endpoints with HMAC-SHA256
 using a per-app "signing secret". The receiver must:
 
 1. Read the raw body (not the parsed JSON).

@@ -15,6 +15,19 @@ The main `Info.plist` is in `ios/<ProjectName>/Info.plist` for React Native proj
 `<ProjectName>/Info.plist` for pure-native projects. Read it — it's where most of the platform
 settings live.
 
+## Before flagging — meta-NEVER for iOS
+
+**NEVER store an auth token, refresh token, or biometric secret in `UserDefaults`** — even
+"temporarily" or "just for the prototype." `UserDefaults` is a plist in the app sandbox, readable by
+anyone with the device backup, recoverable on jailbroken devices, and synchronized to iCloud if the
+user has iCloud backup on. The Keychain exists for exactly this purpose. **Severity: High** when the
+stored value is a credential.
+
+**NEVER use `evaluateJavaScript` with a string composed from any data not under your sole control**
+(user input, network responses, file contents). It's `eval` for native, exposing the JS context (and
+therefore message handlers, and therefore native methods) to whoever influenced the string.
+**Severity: Critical**.
+
 ## Step 2 — Keychain vs UserDefaults
 
 Tokens, passwords, biometric secrets, and any long-lived credential belong in the Keychain.

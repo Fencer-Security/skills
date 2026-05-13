@@ -13,6 +13,25 @@ The threat model:
 - **Tool boundary**: each handler validates its inputs. Without validation, the LLM (via the client)
   can call tools with adversarial args.
 
+## Before flagging — meta-NEVER for MCP servers
+
+**NEVER let a tool handler echo its arguments back in an error message.** This pattern looks
+helpful:
+
+```ts
+throw new Error(`Invalid path: ${args.path}`);
+```
+
+…but in an LLM-driven context, the error message goes back into the model's context as the "tool
+result." If `args.path` is attacker-influenced (via prompt injection of a previous tool output), the
+error becomes a vector for instructions reaching the model. Return errors with fixed strings; log
+details server-side if needed.
+
+**NEVER bind an SSE/HTTP MCP server to `0.0.0.0` without authentication.** Network MCP servers
+without an auth layer are open to anyone on the network. The MCP protocol doesn't define auth — it's
+the server's job. Bound-to-`127.0.0.1` is the default safe stance for local dev. **Severity:
+Critical** if the server exposes destructive tools.
+
 ## Step 1 — Enumerate the tool surface
 
 ```bash

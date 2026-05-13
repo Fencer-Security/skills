@@ -22,6 +22,20 @@ ls app/ 2>/dev/null | head -20
 The JS bundle ships to the device — anything in `process.env`, `app.config.*`, or imported modules
 is recoverable from the IPA/APK.
 
+## Before flagging — meta-NEVER for Expo / React Native
+
+**NEVER put a server-side secret in an `EXPO_PUBLIC_*` env var.** The `EXPO_PUBLIC_` prefix is
+Expo's signal that "this value is inlined into the JS bundle at build time." Anything in the bundle
+ships to every device and is recoverable in seconds with `strings` or by opening DevTools on a debug
+build. A `EXPO_PUBLIC_STRIPE_SECRET_KEY` doesn't just leak — it leaks to everyone who installs the
+app. **Severity: Critical**.
+
+**NEVER configure `expo-updates` to fetch from a URL the developer doesn't control end-to-end
+without `codeSigningCertificate`.** OTA updates _replace the app's JS bundle_ without an app store
+review. Without code signing, a network attacker (or whoever controls the update channel) can ship
+malicious JS to every install. **Severity: High** without signing; **Critical** if the update
+channel is third-party or unencrypted HTTP.
+
 ## Step 2 — Secrets and config
 
 ```bash

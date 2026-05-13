@@ -8,6 +8,17 @@ off, so the anon key grants read/write to every row in every table.** The well-p
 RLS incident in early 2026 was exactly this — generated apps shipped with anon keys that worked
 because RLS was disabled across many user databases at once.
 
+**Before flagging an RLS finding, ask yourself**: am I looking at the _source of truth_ (the running
+database via SQL) or a _snapshot_ (migration files)? Migrations can be incomplete, out-of-order, or
+"fixed" by a subsequent migration that disables RLS. Always prefer SQL against the live DB when the
+user can grant access; treat migration-only audits as best-effort.
+
+**NEVER recommend `SUPABASE_SERVICE_ROLE_KEY` (or any service-role variable) in client code, in
+`NEXT_PUBLIC_*` / `VITE_*` / `EXPO_PUBLIC_*` env vars, in client-imported files, or in any Next.js
+page/layout that isn't explicitly `'use server'` / API route.** The service role key bypasses RLS
+entirely; if it reaches the client bundle, every row in every table is readable and writable by
+anyone who opens DevTools. **Severity: Critical** every time. This is the headline incident pattern.
+
 ## Step 1 — Enumerate tables and check RLS state
 
 The source of truth is the running database, not the code. If the user can give you access to query

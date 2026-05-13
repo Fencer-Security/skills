@@ -57,8 +57,10 @@ SHARED_DIR="$SKILL_DIR/../../shared"
 3. **Run the baseline** (`$SHARED_DIR/references/baseline.md`, checks A–D — for a single script,
    deps and SAST may be thin; record what was checked).
 4. **Run the category-specific static checks** (sections 1–6 below).
-5. **Run live tests** if a safe invocation was provided. Live tests run in an isolated
-   `mktemp -d` — never against real data.
+5. **Run live tests** if a safe invocation was provided. **MANDATORY**: read
+   `$SKILL_DIR/references/live-tests.md` in full before running any probe. Do NOT skip the
+   sandbox setup at the top of that file. Live tests run in an isolated `mktemp -d` — never
+   against real data.
 6. **Render the report** using `$SHARED_DIR/references/report-template.md`.
 
 ### Detect the script shape
@@ -75,6 +77,11 @@ grep -hE '"(commander|yargs|meow|cac|clipanion)"' package.json 2>/dev/null
 ```
 
 ## 1 — Argument handling
+
+**Before flagging an argument as unsafe, ask yourself**: where does the value flow? An argument
+that ends up in `print(arg)` is fine. The same argument flowing into `subprocess` or `open()` is
+the actual risk. Trace from `argparse` / `commander` to first use; severity is set by the _sink_,
+not the _source_.
 
 Look at how arguments reach the rest of the code.
 
@@ -100,6 +107,10 @@ Flag:
 - No `--help` text or examples for destructive flags. **Low** (UX, not security, but flag).
 
 ## 2 — Subprocess and shell-out
+
+**Before flagging a subprocess call, ask yourself**: is the shell involved at all? `subprocess.run([
+"cmd", arg])` (list form) is safe even with untrusted args. `subprocess.run(f"cmd {arg}",
+shell=True)` is RCE even with "trusted" args. The shell is the boundary; list-form bypasses it.
 
 ```bash
 # Python
@@ -127,6 +138,10 @@ Safe patterns to confirm:
 
 ## 3 — File I/O
 
+**Before flagging a path operation, ask yourself**: is the path _normalized + contained_?
+`os.path.realpath(path)` resolves symlinks but doesn't enforce containment — you still need to
+check the resolved path is under an allowed root. Normalization alone is half the fix.
+
 ```bash
 # Path joining and traversal-prone patterns
 grep -rnE "open\(.*\+|os\.path\.join.*input|join\(.*req" --include="*.py" . | head -20
@@ -146,6 +161,11 @@ Flag:
 
 ## 4 — Credential file hygiene
 
+**Before flagging a credfile read, ask yourself**: who controls the file's lifecycle? A file the
+script _creates_ needs `0600` on write. A file the script _reads_ (operator-supplied) needs a
+mode check before reading — fail closed on `world-readable`. Two different obligations from the
+same file path.
+
 ```bash
 # Where does the script read secrets from?
 grep -rnE "(open|read|load).*\.(json|yaml|toml|env|secret|key|pem)" --include="*.{ts,js,py,sh}" .
@@ -163,6 +183,11 @@ Flag:
 - Reads a credfile from a path supplied via argument with no normalization. **Medium**.
 
 ## 5 — Network calls
+
+**Before flagging TLS-disabled, ask yourself**: is this a dev-only escape hatch or a production
+code path? A test fixture that hits a local self-signed server with `verify=False` is fine. The
+same line in production code is **Critical**. Check whether the call is gated by an env / debug
+flag or whether it runs unconditionally.
 
 ```bash
 # TLS verification disabled

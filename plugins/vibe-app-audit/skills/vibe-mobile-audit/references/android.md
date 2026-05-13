@@ -14,6 +14,20 @@ find . -maxdepth 5 -name "network_security_config.xml" | head -5
 For React Native, the manifest is at `android/app/src/main/AndroidManifest.xml`. For pure Android
 projects, it's at `app/src/main/AndroidManifest.xml`.
 
+## Before flagging — meta-NEVER for Android
+
+**NEVER ship a release APK with `android:debuggable="true"` in the manifest.** A debuggable release
+allows `adb shell run-as <pkg>` to read the app's private storage _without root_ on any device —
+every shared-pref, every cached token, every SQLite file. This often appears accidentally in
+vibe-coded apps when a debug manifest is merged into release. **Severity: Critical** for release
+builds; check the `applicationVariants` config.
+
+**NEVER call `addJavascriptInterface` on a `WebView` that loads anything other than packaged app
+HTML** (file:// from `assets/`). Any remote URL — even one you control today — can be MITM'd or
+redirected, and `addJavascriptInterface` exposes the bridged class's public methods to JS via
+reflection. On API <17 this is full RCE; on API ≥17 only `@JavascriptInterface`-annotated methods
+are exposed, but it's still attack surface. **Severity: Critical** for remote content.
+
 ## Step 2 — Secret storage
 
 Modern Android: use `EncryptedSharedPreferences` (from the Jetpack Security library) or `Keystore`
