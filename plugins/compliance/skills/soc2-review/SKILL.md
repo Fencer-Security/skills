@@ -220,6 +220,7 @@ The use case can promote or demote the default by one level. A single Medium can
 **Follow-up questions (vendor mode).** Phrase them specifically — not "tell us about your incident response process" but "your SOC 2 doesn't describe a formal incident response runbook; can you share your IR plan and details on the last tabletop exercise?" Aim for 5–10. More than that and the vendor will treat it as a questionnaire rather than a focused diligence conversation.
 
 **Remediation priorities + likely reviewer questions (self-review mode).** Instead of follow-up questions, produce two sections:
+
 1. **Remediation priorities** — ordered by impact on readiness, each tied to a finding, with a rough effort estimate (quick win / quarter-level project / major initiative).
 2. **Likely reviewer questions** — what the target reviewer would ask, with preparation guidance for each.
 
@@ -230,6 +231,7 @@ The use case can promote or demote the default by one level. A single Medium can
 **Reviewer slug (self-review mode only).** Short slug for the reviewer perspective. Examples: "Fortune 500 financial services" → `fortune500-finserv`; "state government" → `state-gov`; "healthcare systems" → `healthcare`.
 
 **Filename.**
+
 - Vendor mode: `soc2-review-<company-slug>-<YYYY-MM-DD>-<HHMM>.md`
 - Self-review mode: `soc2-readiness-<company-slug>-<reviewer-slug>-<YYYY-MM-DD>-<HHMM>.md`
 

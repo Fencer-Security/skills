@@ -17,40 +17,40 @@ companies do _something_ well for their stage).
 
 <!-- MODE: vendor -->
 
-~~~markdown
+```markdown
 # SOC 2 Review: [Vendor Name]
-~~~
+```
 
 <!-- MODE: self-review -->
 
-~~~markdown
+```markdown
 # SOC 2 Readiness Assessment: [Company Name]
-~~~
+```
 
 <!-- MODE: both -->
 
-~~~markdown
+```markdown
 **Report type:** [Type 1 / Type 2] **Period covered:** [date range or "as of [date]"] **Auditor:**
 [auditor firm] **Auditor opinion:** [Unqualified / Qualified / Adverse / Disclaimer] **Reviewed:**
 [today's date]
-~~~
+```
 
 <!-- MODE: vendor -->
 
-~~~markdown
+```markdown
 **Review mode:** Vendor diligence
-~~~
+```
 
 <!-- MODE: self-review -->
 
-~~~markdown
-**Review mode:** Self-review readiness assessment
-**Reviewer perspective:** [e.g., Fortune 500 financial services procurement, state government, healthcare systems]
-~~~
+```markdown
+**Review mode:** Self-review readiness assessment **Reviewer perspective:** [e.g., Fortune 500
+financial services procurement, state government, healthcare systems]
+```
 
 <!-- MODE: both -->
 
-~~~markdown
+```markdown
 ---
 
 ## Executive summary
@@ -63,42 +63,41 @@ they have, what are the key takeaways.]
 - [bullet]
 
 **Findings tally:** [N] Critical · [N] High · [N] Medium · [N] Low/Observation · [N] Strengths
-~~~
+```
 
 <!-- MODE: vendor -->
 
-~~~markdown
+```markdown
 **Recommendation:** [Proceed / Proceed with conditions / Hold pending follow-up / Do not proceed]
-~~~
+```
 
 <!-- MODE: self-review -->
 
-~~~markdown
+```markdown
 **Readiness:** [Ready / Ready with caveats / Address before sharing / Significant gaps]
-~~~
+```
 
 <!-- MODE: both -->
 
-~~~markdown
+```markdown
 ---
 
 ## Company profile
-
-~~~
+```
 
 <!-- MODE: vendor -->
 
-~~~markdown
+```markdown
 [1–2 paragraphs describing the vendor and the peer cohort being used as the comparison baseline.
 Make the comparison explicit so the reader knows what bar is being applied. E.g., "We are evaluating
 [Vendor] as a Series A SaaS vendor selling primarily to SMB customers in the restaurant industry.
 Our comparison baseline is what's reasonable for a 30-person, post-Series-A B2B SaaS company with
 SMB-focused distribution — not enterprise or regulated-industry standards."]
-~~~
+```
 
 <!-- MODE: self-review -->
 
-~~~markdown
+```markdown
 [1–2 paragraphs describing the company and the reviewer perspective being applied. Make both the
 baseline and the overlay explicit. E.g., "We are assessing [Company]'s SOC 2 as it would be reviewed
 by a Fortune 500 financial services procurement team. [Company] is a Series B SaaS vendor with 80
@@ -106,11 +105,11 @@ employees, selling project management tools to mid-market customers. The peer co
 Series B B2B SaaS company with mid-market distribution. The financial services reviewer perspective
 raises the bar on change management, processing integrity, vendor risk management, and segregation
 of duties beyond what [Company]'s typical customer base would demand."]
-~~~
+```
 
 <!-- MODE: both -->
 
-~~~markdown
+```markdown
 ---
 
 ## SOC 2 report at a glance
@@ -141,24 +140,24 @@ matters, and supporting evidence.
 
 - **Finding:** [What the report shows or doesn't show.]
 - **Peer expectation:** [What a reasonable peer at this stage/industry/customer-base would have.]
-~~~
+```
 
 <!-- MODE: vendor -->
 
-~~~markdown
+```markdown
 - **Why it matters here:** [Tie to the user's intended use case if known.]
-~~~
+```
 
 <!-- MODE: self-review -->
 
-~~~markdown
+```markdown
 - **Why a [reviewer type] reviewer would flag this:** [Explain what the target reviewer's
   procurement or security team would think and why this would be a concern in their framework.]
-~~~
+```
 
 <!-- MODE: both -->
 
-~~~markdown
+```markdown
 - **Evidence:** [Section/page reference, exception language, or "control not described in report."]
 
 [Repeat for each Critical finding. If none, write "None." — and that's a strength worth noting.]
@@ -191,11 +190,11 @@ maturity.]
 ---
 
 ## CUECs that matter
-~~~
+```
 
 <!-- MODE: vendor -->
 
-~~~markdown
+```markdown
 The vendor's report lists complementary user entity controls — things the vendor expects the
 customer to do. This section is a curated reference for whoever owns the vendor relationship.
 
@@ -209,11 +208,11 @@ the boundary list, not a duplicate.
 
 [If no CUECs are surprising, write "Nothing unusual — standard customer obligations around user
 access management and configuration."]
-~~~
+```
 
 <!-- MODE: self-review -->
 
-~~~markdown
+```markdown
 Your report lists these complementary user entity controls — obligations you're placing on your
 customers. A [reviewer type] reviewer will scrutinize whether these are reasonable or whether they
 shift more responsibility than the customer expects to carry.
@@ -228,17 +227,17 @@ to [reviewer type] during procurement review.
 
 [If no CUECs are surprising, write "Standard customer obligations — nothing that would raise
 eyebrows with [reviewer type] procurement."]
-~~~
+```
 
 <!-- MODE: both -->
 
-~~~markdown
+```markdown
 ---
-~~~
+```
 
 <!-- MODE: vendor -->
 
-~~~markdown
+```markdown
 ## Recommendation
 
 **[Proceed / Proceed with conditions / Hold pending follow-up / Do not proceed]**
@@ -264,11 +263,11 @@ above — not a generic security questionnaire.
 
 [Aim for 5–10 questions. More than that and the vendor will treat it as a questionnaire rather than
 a focused diligence conversation.]
-~~~
+```
 
 <!-- MODE: self-review -->
 
-~~~markdown
+```markdown
 ## Readiness assessment
 
 **[Ready / Ready with caveats / Address before sharing / Significant gaps]**
@@ -308,7 +307,7 @@ Prepare answers or documentation for each.
 5. [Question + preparation guidance]
 
 [Aim for 5–10. These should be specific and answerable, not generic questionnaire items.]
-~~~
+```
 
 ---
 
@@ -330,21 +329,21 @@ Prepare answers or documentation for each.
   Type 2 with no real gaps for their stage, the report can be 1 page with a "Proceed" or "Ready"
   recommendation and three follow-up questions. That's success, not failure.
 - **Filename**:
-  - Vendor mode: `soc2-review-<vendor-slug>-<YYYY-MM-DD>-<HHMM>.md`
-  - Self-review mode: `soc2-readiness-<company-slug>-<reviewer-slug>-<YYYY-MM-DD>-<HHMM>.md`
-  — always include time so same-day re-reviews don't overwrite the original.
+    - Vendor mode: `soc2-review-<vendor-slug>-<YYYY-MM-DD>-<HHMM>.md`
+    - Self-review mode: `soc2-readiness-<company-slug>-<reviewer-slug>-<YYYY-MM-DD>-<HHMM>.md` —
+      always include time so same-day re-reviews don't overwrite the original.
 
 ## Self-review recommendation rubric
 
 Use this rubric as the default starting point for self-review mode. Deviate when the reviewer
 perspective or use case demands it — state reasoning explicitly.
 
-| Severity tally                               | Default readiness assessment |
-| -------------------------------------------- | ---------------------------- |
+| Severity tally                               | Default readiness assessment                                                                                           |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | Any Critical                                 | **Address before sharing** — or **Significant gaps** if structural (adverse opinion, scope mismatch, repeat criticals) |
-| 0 Critical, 2+ High                          | **Address before sharing** |
-| 0 Critical, 0–1 High, several Medium         | **Ready with caveats** |
-| 0 Critical, 0 High, mostly Low / Observation | **Ready** |
+| 0 Critical, 2+ High                          | **Address before sharing**                                                                                             |
+| 0 Critical, 0–1 High, several Medium         | **Ready with caveats**                                                                                                 |
+| 0 Critical, 0 High, mostly Low / Observation | **Ready**                                                                                                              |
 
 **Readiness levels explained:**
 

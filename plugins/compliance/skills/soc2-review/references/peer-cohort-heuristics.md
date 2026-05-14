@@ -198,12 +198,13 @@ Apply these on top of the stage profile.
 
 - **Floor lower and more variable than federal.** Some states have formal frameworks (TX-RAMP,
   StateRAMP); many accept SOC 2 + a security questionnaire with no framework-specific requirements.
-- Data residency and public records / FOIA considerations may apply — ask whether data will be stored
-  in-state and whether any of it is subject to public records requests.
+- Data residency and public records / FOIA considerations may apply — ask whether data will be
+  stored in-state and whether any of it is subject to public records requests.
 - CJIS Security Policy applies if the vendor touches criminal justice information — this is a hard
   requirement, not a maturity preference.
 - Expect basic security hygiene but not FedRAMP-level rigor. A SOC 2 Type 2 with Security +
-  Availability is typically sufficient. Additional frameworks beyond SOC 2 are unusual at this level.
+  Availability is typically sufficient. Additional frameworks beyond SOC 2 are unusual at this
+  level.
 - A vendor selling to municipal governments without MFA or encryption is still a real concern — the
   bar is lower than federal, not absent.
 
@@ -215,14 +216,14 @@ Apply these on top of the stage profile.
 - Primary concerns: operational continuity (Availability TSC), data integrity, and basic
   confidentiality of project data, bid data, and proprietary designs.
 - **Vendors touching OT/ICS environments face a raised floor**: expect network segmentation between
-  IT and OT, disciplined change management, and controls aligned with IEC 62443 or NIST SP 800-82.
-  A SOC 2 alone may not cover OT-specific risks — note this as a gap if OT is in scope.
+  IT and OT, disciplined change management, and controls aligned with IEC 62443 or NIST SP 800-82. A
+  SOC 2 alone may not cover OT-specific risks — note this as a gap if OT is in scope.
 - Vendors handling only IT/SaaS workloads (project management, ERP, document management) for these
   industries: bar is roughly equivalent to mid-market commercial with a slight raise on availability
   and business continuity.
 - Don't expect deep control-by-control scrutiny from these reviewers — they care more about "will
-  this vendor's failure disrupt our operations or expose our project data" than granular access review
-  cadence or formal threat modeling.
+  this vendor's failure disrupt our operations or expose our project data" than granular access
+  review cadence or formal threat modeling.
 - Safety-critical contexts (construction site systems, manufacturing floor monitoring) raise the bar
   on availability and integrity closer to critical-infrastructure levels.
 
@@ -372,16 +373,16 @@ second pass.
 
 ### Reviewer-to-heuristic mapping
 
-| Reviewer perspective                         | Industry adjustment applied          | Customer-base adjustment applied              |
-| -------------------------------------------- | ------------------------------------ | --------------------------------------------- |
-| Financial services (banks, insurance, etc.)  | Financial services                   | Selling to regulated industries               |
-| Healthcare / hospital systems                | Healthcare / health-tech             | Selling to regulated industries               |
-| Federal government / FedRAMP                 | Government / public sector           | Selling to regulated industries               |
-| State or local government                    | State and local government           | Selling to mid-market or enterprise (varies)  |
-| Heavy industry / manufacturing / construction| Heavy industry / manufacturing       | Selling to mid-market                         |
-| Enterprise SaaS procurement (Fortune 500)    | None (no industry-specific raise)    | Selling to enterprise / Fortune 500           |
-| Mid-market commercial buyers                 | None                                 | Selling to mid-market / commercial            |
-| General enterprise — no specific vertical    | None                                 | Selling to enterprise / Fortune 500           |
+| Reviewer perspective                          | Industry adjustment applied       | Customer-base adjustment applied             |
+| --------------------------------------------- | --------------------------------- | -------------------------------------------- |
+| Financial services (banks, insurance, etc.)   | Financial services                | Selling to regulated industries              |
+| Healthcare / hospital systems                 | Healthcare / health-tech          | Selling to regulated industries              |
+| Federal government / FedRAMP                  | Government / public sector        | Selling to regulated industries              |
+| State or local government                     | State and local government        | Selling to mid-market or enterprise (varies) |
+| Heavy industry / manufacturing / construction | Heavy industry / manufacturing    | Selling to mid-market                        |
+| Enterprise SaaS procurement (Fortune 500)     | None (no industry-specific raise) | Selling to enterprise / Fortune 500          |
+| Mid-market commercial buyers                  | None                              | Selling to mid-market / commercial           |
+| General enterprise — no specific vertical     | None                              | Selling to enterprise / Fortune 500          |
 
 ### Principle: the overlay only raises
 
@@ -449,7 +450,7 @@ government offices.
   SMBs, but don't run Fortune 500-grade security reviews)
 
 **Result:** The bar rises modestly above the SMB-focused Series A baseline. Expect documented
-security policies, SOC 2 Type 2 with Security + Availability, basic encryption, and access
-controls. Don't expect FedRAMP, NIST 800-53 mapping, or a formal privacy program — state
-procurement is less standardized and the floor is lower than federal. The report should note which
-state-specific frameworks (TX-RAMP, StateRAMP) might apply if the user names the state.
+security policies, SOC 2 Type 2 with Security + Availability, basic encryption, and access controls.
+Don't expect FedRAMP, NIST 800-53 mapping, or a formal privacy program — state procurement is less
+standardized and the floor is lower than federal. The report should note which state-specific
+frameworks (TX-RAMP, StateRAMP) might apply if the user names the state.
