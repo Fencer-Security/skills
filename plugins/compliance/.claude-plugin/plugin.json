@@ -1,6 +1,6 @@
 {
   "name": "compliance",
-  "description": "SOC 2 vendor diligence and related compliance review skills.",
+  "description": "SOC 2 review skills — vendor diligence and self-review readiness assessments, calibrated to reviewer perspective.",
   "version": "0.1.0",
   "author": {
     "name": "Fencer",
@@ -13,6 +13,8 @@
     "soc2",
     "vendor-diligence",
     "vendor-review",
+    "self-review",
+    "soc2-readiness",
     "grc",
     "third-party-risk",
     "security-questionnaire"

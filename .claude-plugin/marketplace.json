@@ -15,7 +15,7 @@
     {
       "name": "compliance",
       "source": "./plugins/compliance",
-      "description": "SOC 2 vendor diligence and related compliance review skills."
+      "description": "SOC 2 review skills — vendor diligence and self-review readiness assessments, calibrated to reviewer perspective."
     }
   ]
 }

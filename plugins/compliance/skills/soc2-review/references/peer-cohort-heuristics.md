@@ -194,6 +194,38 @@ Apply these on top of the stage profile.
 - FedRAMP is the most common requirement. SOC 2 alone usually isn't enough for federal customers.
 - StateRAMP, CJIS, or specific state-level frameworks may apply.
 
+### State and local government
+
+- **Floor lower and more variable than federal.** Some states have formal frameworks (TX-RAMP,
+  StateRAMP); many accept SOC 2 + a security questionnaire with no framework-specific requirements.
+- Data residency and public records / FOIA considerations may apply — ask whether data will be stored
+  in-state and whether any of it is subject to public records requests.
+- CJIS Security Policy applies if the vendor touches criminal justice information — this is a hard
+  requirement, not a maturity preference.
+- Expect basic security hygiene but not FedRAMP-level rigor. A SOC 2 Type 2 with Security +
+  Availability is typically sufficient. Additional frameworks beyond SOC 2 are unusual at this level.
+- A vendor selling to municipal governments without MFA or encryption is still a real concern — the
+  bar is lower than federal, not absent.
+
+### Heavy industry / manufacturing / construction
+
+- **Historically low security maturity in vendor procurement, but rising fast** — especially for
+  vendors touching project data, safety-critical systems, supply chain logistics, or OT/ICS
+  environments.
+- Primary concerns: operational continuity (Availability TSC), data integrity, and basic
+  confidentiality of project data, bid data, and proprietary designs.
+- **Vendors touching OT/ICS environments face a raised floor**: expect network segmentation between
+  IT and OT, disciplined change management, and controls aligned with IEC 62443 or NIST SP 800-82.
+  A SOC 2 alone may not cover OT-specific risks — note this as a gap if OT is in scope.
+- Vendors handling only IT/SaaS workloads (project management, ERP, document management) for these
+  industries: bar is roughly equivalent to mid-market commercial with a slight raise on availability
+  and business continuity.
+- Don't expect deep control-by-control scrutiny from these reviewers — they care more about "will
+  this vendor's failure disrupt our operations or expose our project data" than granular access review
+  cadence or formal threat modeling.
+- Safety-critical contexts (construction site systems, manufacturing floor monitoring) raise the bar
+  on availability and integrity closer to critical-infrastructure levels.
+
 ### B2C / consumer
 
 - Privacy floor is higher (GDPR, CCPA, age-appropriate design where applicable).
@@ -318,3 +350,106 @@ two academic medical centers, sells a clinical workflow platform that ingests EH
 The point of stacking the adjustments: a 60-person company without HIPAA controls is fine if they
 sell marketing tools to small businesses; the same company is a Critical-finding case when their
 customers are hospitals.
+
+## Applying a reviewer perspective overlay
+
+When the user specifies a **reviewer perspective** — "how would a Fortune 500 bank evaluate this
+report?" or "we're preparing for healthcare procurement reviews" — the peer cohort profile gets a
+second pass.
+
+### How it works
+
+1. **Build the baseline** from the subject company's own context (stage + industry + customer base)
+   using the sections above. This is the same process as a standard review.
+
+2. **Apply the reviewer overlay** by mapping the reviewer type to the industry and customer-base
+   adjustments above. The overlay raises the bar to match what that reviewer would expect — it never
+   lowers it below what the subject's own profile produces.
+
+3. **Use the higher of the two bars** for each control domain. If the subject's own profile already
+   meets or exceeds the reviewer's expectations (e.g., a healthtech vendor selling to hospitals,
+   reviewed by a hospital system), the overlay adds nothing.
+
+### Reviewer-to-heuristic mapping
+
+| Reviewer perspective                         | Industry adjustment applied          | Customer-base adjustment applied              |
+| -------------------------------------------- | ------------------------------------ | --------------------------------------------- |
+| Financial services (banks, insurance, etc.)  | Financial services                   | Selling to regulated industries               |
+| Healthcare / hospital systems                | Healthcare / health-tech             | Selling to regulated industries               |
+| Federal government / FedRAMP                 | Government / public sector           | Selling to regulated industries               |
+| State or local government                    | State and local government           | Selling to mid-market or enterprise (varies)  |
+| Heavy industry / manufacturing / construction| Heavy industry / manufacturing       | Selling to mid-market                         |
+| Enterprise SaaS procurement (Fortune 500)    | None (no industry-specific raise)    | Selling to enterprise / Fortune 500           |
+| Mid-market commercial buyers                 | None                                 | Selling to mid-market / commercial            |
+| General enterprise — no specific vertical    | None                                 | Selling to enterprise / Fortune 500           |
+
+### Principle: the overlay only raises
+
+The reviewer perspective never lowers the bar. If a vendor already sells to enterprise healthcare
+customers and the reviewer is a mid-market commercial buyer, the vendor's own profile produces a
+higher bar — use that. The overlay catches the case where a vendor's actual customer base is less
+demanding than the specific reviewer evaluating them.
+
+### Worked example — self-review, bank reviewer
+
+**Subject:** 80-person Series B SaaS company, project management tools, selling primarily to
+mid-market.
+
+**Reviewer perspective:** Fortune 500 financial services (JP Morgan-type procurement).
+
+**Baseline (from subject's own profile):**
+
+- Stage: Series B
+- Industry: B2B SaaS, no special data sensitivity → no industry adjustment
+- Customer base: mid-market → slight raise
+
+**Reviewer overlay:**
+
+- Financial services industry adjustment → expect PCI-adjacent rigor on change management,
+  Processing Integrity TSC in scope, mature vendor risk program, segregation of duties
+- "Selling to regulated industries" customer-base adjustment → significant raise
+
+**Result:** The bar looks like Series B + financial-services floor + enterprise-regulated customer
+expectations. This is a meaningful stretch for a mid-market project management tool company. The
+report should acknowledge this honestly: "Your peer cohort doesn't require this level of maturity.
+However, a Fortune 500 bank's procurement team will apply their standard bar regardless of your
+typical customer profile."
+
+### Worked example — vendor mode, redundant reviewer perspective
+
+**Subject:** 30-person Series A healthtech vendor, selling to hospitals.
+
+**Reviewer:** "We're a hospital system evaluating this vendor."
+
+**Baseline:** Series A + healthcare industry adjustment + regulated customer-base adjustment.
+
+**Reviewer overlay:** Healthcare + regulated industries — but the subject already has both applied.
+
+**Result:** No additional raise. The reviewer's expectations are already embedded in the subject's
+own profile. This is the common case when the reviewer is a natural customer of the vendor.
+
+### Worked example — self-review, state government reviewer
+
+**Subject:** 40-person Series A SaaS company, document management tools, selling to SMBs and small
+government offices.
+
+**Reviewer perspective:** State government procurement.
+
+**Baseline:**
+
+- Stage: Series A
+- Industry: B2B SaaS, no special sensitivity → no industry adjustment
+- Customer base: SMB-focused → no raise
+
+**Reviewer overlay:**
+
+- State and local government industry adjustment → modest raise on data residency, public records
+  handling, and availability. CJIS only if criminal justice data is involved (ask).
+- Customer-base adjustment: mid-market level (state agencies are larger and more process-heavy than
+  SMBs, but don't run Fortune 500-grade security reviews)
+
+**Result:** The bar rises modestly above the SMB-focused Series A baseline. Expect documented
+security policies, SOC 2 Type 2 with Security + Availability, basic encryption, and access
+controls. Don't expect FedRAMP, NIST 800-53 mapping, or a formal privacy program — state
+procurement is less standardized and the floor is lower than federal. The report should note which
+state-specific frameworks (TX-RAMP, StateRAMP) might apply if the user names the state.
