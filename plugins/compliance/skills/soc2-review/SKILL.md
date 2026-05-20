@@ -142,8 +142,18 @@ If unfamiliar with SOC 2 report structure, section layout, or how to read except
 Pull the following from the report. Capture page references using the format `Section IV.5, p. 47` when the section is useful, or `p. 47` when section context isn't needed. Consistent format makes the report's evidence citations skimmable and lets the reader jump to the source quickly.
 
 - **Auditor and opinion**: Who performed the audit. What kind of opinion (unqualified is the goal; qualified or adverse are red flags).
-- **Report type and period**: Type 1 or Type 2. For Type 2, the period covered (a 3-month period for a first-year audit is normal; ongoing reports should cover ~12 months with no gaps from the previous report).
-- **Freshness**: Today's date minus the period end. **If the period ended more than 12 months ago, this is a finding** — Medium for 12–18 months, High for >18 months. In vendor mode, ask the user whether a current report is available before going deep on the rest of the extraction. In self-review mode, flag it as: "Your report's coverage period ended [N] months ago. A [reviewer type] reviewer will flag this immediately — prioritize getting your next audit period completed before sharing."
+- **Report type and currency**: Type 1 or Type 2. For Type 2, extract the period covered and compute freshness (today's date minus the period end date). This is a single finding axis — do not generate separate findings for the testing window length and for staleness, since both describe how current the audit evidence is. Use this severity table:
+
+    | Situation                                                                | Severity                                     |
+    | ------------------------------------------------------------------------ | -------------------------------------------- |
+    | First-year Type 2 with a 3–6 month period                                | No finding — normal for a first-year audit   |
+    | Non-first-year Type 2 with period under 12 months (short testing window) | Medium                                       |
+    | Period ended 12–18 months ago (stale report)                             | Medium                                       |
+    | Period ended more than 18 months ago                                     | High                                         |
+    | Coverage gap from the prior report's end date                            | Medium (or High if the gap exceeds 6 months) |
+
+    When both a short window and staleness apply, report the single higher severity, not two findings. In vendor mode, if the report is stale (period ended >12 months ago), ask the user whether a current report is available before going deep on the rest of the extraction. In self-review mode, flag it as: "Your report's coverage period ended [N] months ago. A [reviewer type] reviewer will flag this immediately — prioritize getting your next audit period completed before sharing."
+
 - **Trust Service Criteria (TSC) in scope**: Security is mandatory; Availability, Confidentiality, Processing Integrity, and Privacy are optional. Which the vendor included signals what they care about and what their customers demanded.
 - **Additional frameworks attested**: Some SOC 2 reports include or reference additional criteria — HIPAA, HITRUST, NIST CSF mappings, PCI DSS additional criteria, ISO 27001 cross-references. Capture these; they're candidate **Strengths for stage** (program-maturity signal beyond what SOC 2 alone provides).
 - **System scope**: What products/services/environments are in scope. Watch for narrow scoping (e.g., only the marketing site, not the actual product).
@@ -191,6 +201,18 @@ Avoid the trap of importing enterprise expectations wholesale. If you find yours
 - Self-review mode: "Why a [reviewer type] reviewer would flag this" — explain what the target reviewer's procurement or security team would think and why this would be a concern in their framework.
 
 **CUECs deserve their own rating pass.** Walk through the CUECs from Step 2 with the same severity lens. A CUEC that shifts material responsibility — "customer is responsible for backing up exported data," "customer is responsible for monitoring authentication anomalies," "customer is responsible for retaining audit logs beyond 30 days" — should generate a Medium or High **finding**, not just a "CUECs that matter" bullet, when the user (vendor mode) is not realistically going to operate that control, or when the target reviewer (self-review mode) would find the shift objectionable.
+
+**Deduplicate before finalizing.** Before moving to the report, scan your findings list for overlapping entries. If two findings share the same root cause, merge them into one finding at the higher severity. The canonical example: a short testing window and a stale report period are both symptoms of the audit evidence not being current — that's one "Report currency" finding (already handled in Step 2), not two. Other common overlaps: an exception in access reviews and an absence of a formal access review process; a weak management response and the underlying exception it responds to. One finding per root cause; cite all evidence.
+
+**Common-gap checklist.** After rating findings, verify that the following high-signal controls appear in the report — or appear as findings if absent. These are the gaps most commonly missed because the report simply doesn't mention a control and the reviewer doesn't notice the absence. Cross-reference the company's stage from the peer-cohort heuristics to decide whether each item is expected.
+
+- **Annual third-party penetration test** — expected from Series A onward. If the report describes no pen test and the company is post-Series-A, this is a finding (typically High for Series B+, Medium for Series A).
+- **Formal incident response plan** — expected from Series A onward. Absence at a post-Series-A company is a finding (High if the company stores sensitive data or serves enterprise customers).
+- **Access reviews completing on cadence** — expected from Series A onward. Look for evidence of reviews actually running, not just a policy that says they should. Absence or non-completion is a finding.
+- **Encryption at rest for customer data** — expected at all stages when the company stores customer data. Absence is a finding (High for any company handling PII, PHI, or financial data; Medium otherwise).
+- **Vendor / subservice organization management** — expected from Series B onward. A company with carved-out subservice orgs but no described process for monitoring those orgs' SOC 2s is a finding.
+
+If any item above is absent from the report and expected for the company's stage per the peer-cohort heuristics, ensure it appears as a finding at the appropriate severity. If the report genuinely addresses all of them, move on — this checklist is a safety net, not a padding exercise.
 
 ### Step 5: Generate the report
 
