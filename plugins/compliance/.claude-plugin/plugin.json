@@ -1,7 +1,7 @@
 {
   "name": "compliance",
   "description": "SOC 2 review skills — vendor diligence and self-review readiness assessments, calibrated to reviewer perspective.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Fencer",
     "url": "https://fencer.dev"
