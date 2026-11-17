@@ -38,13 +38,13 @@ certified by the NVD."
 
 Apply the first matching row. Use only fields from this lookup.
 
-| What the entry shows                                                         | Priority                                                                                                      |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `withdrawn` is set                                                           | Withdrawn. Say the record is withdrawn or rejected. Do not tell the user to patch it as a live vulnerability. |
-| `kev` is set, or `ssvc.exploitation` is `active`, or `exploits` is non-empty | Patch now. It is in CISA KEV, CISA calls exploitation active, or the feed lists a public exploit.             |
-| `epss.score` >= 0.1, or `severity` is `critical`, or `critical` is true      | High. Patch in the current cycle.                                                                             |
-| `severity` is `high`                                                         | Soon. Schedule the fixed version.                                                                             |
-| Anything else                                                                | Track. Take the fix when convenient. The feed does not show active exploitation.                              |
+| What the entry shows                                                         | Priority                                                                                          |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `withdrawn` is set                                                           | Withdrawn. Say the record is withdrawn or rejected. A patch recommendation does not apply.        |
+| `kev` is set, or `ssvc.exploitation` is `active`, or `exploits` is non-empty | Patch now. It is in CISA KEV, CISA calls exploitation active, or the feed lists a public exploit. |
+| `epss.score` >= 0.1, or `severity` is `critical`, or `critical` is true      | High. Patch in the current cycle.                                                                 |
+| `severity` is `high`                                                         | Soon. Schedule the fixed version.                                                                 |
+| Anything else                                                                | Track. Take the fix when convenient. The feed does not show active exploitation.                  |
 
 Name the fixed versions from `fixes.versions`, `packages[].fixed`, and `fixes.distros`. If none of
 those are present, say the feed does not list a fix. When Ubuntu, Alpine, or Azure Linux fixes are

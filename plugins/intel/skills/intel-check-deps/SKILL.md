@@ -86,4 +86,4 @@ that this is not a safety verdict. Still include unchecked, eol, and other rows 
 
 Close with the `feed` URL from the result when the tool returned one, and the Sources paragraph.
 
-Do not tell the user to upgrade to a version the tool did not list.
+An upgrade suggestion may name only a version the tool listed.
