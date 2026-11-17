@@ -45,18 +45,16 @@ report. Do not POST a lockfile or SBOM there unless the user explicitly wants th
 ## If the MCP tools are not available
 
 Stop and tell the user how to connect the server (see the plugin README). Then, only if they still
-want the lookup in this session, call the public JSON API with GET:
+want the lookup in this session, GET the public JSON API with WebFetch. The host is
+`intel.fencer.dev` and nothing else:
 
 - `GET https://intel.fencer.dev/api/v1/entries/<id>` — one entry. Follow redirects; aliases move to
   the canonical id.
 - `GET https://intel.fencer.dev/api/v1/entries?filter=&tech=&ecosystem=&vendor=&limit=&cursor=`
 - `GET https://intel.fencer.dev/api/v1/search?q=&severity=&kev=&exploited=&tech=&ecosystem=&vendor=&package=&published=&type=&limit=&offset=`
 
-```bash
-curl -fsSL "https://intel.fencer.dev/api/v1/entries/CVE-2024-3094"
-```
-
-A 400 body is `{"error": "..."}`. Pass the message back. Do not retry with extra parameters.
+A 400 body is `{"error": "..."}`. Pass the message back. Do not retry with extra parameters. Do not
+send the request to any other host.
 
 There is no public GET that checks a lockfile. Without `check_stack`, say exact version matching is
 unavailable until the MCP server is connected. Do not POST the file to create a stored report unless

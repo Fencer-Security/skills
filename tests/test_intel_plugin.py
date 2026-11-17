@@ -89,6 +89,7 @@ def test_skills_stay_on_the_public_surface() -> None:
         assert "intel.fencer.dev" in text
         assert "using-intel.md" in text
         assert "Sources" in text
+        assert frontmatter["allowed-tools"] == "Read WebFetch(domain:intel.fencer.dev)"
 
 
 def test_recorded_tool_contract_is_documented() -> None:
