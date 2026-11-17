@@ -59,14 +59,24 @@ codex mcp add fencer-intel --url https://intel.fencer.dev/mcp
 }
 ```
 
+## What gets sent
+
+A dependency check sends the lockfile, SBOM, or package list to `https://intel.fencer.dev`. The
+MCP `check_stack` tool returns findings and does not store a public report. `POST /api/v1/stack`
+does store one; the skills do that only when you ask.
+
+Installing the plugin connects the agent to `https://intel.fencer.dev/mcp` over HTTPS, with no API
+key. That server defines the `fencer-intel` tools and writes the responses the skills quote. CI
+checks the tool names this plugin documents against a recorded `tools/list`. A running client uses
+the tools the server returns when it connects.
+
 ## What this does not do
 
 - It does not scan a network, a registry, or a container image you did not pass in.
 - It does not show distro data the public feed excludes (Amazon Linux, Oracle Linux, Wolfi,
   Chainguard, Chainguard Libraries, Echo, MinimOS, Fedora, Photon OS, Red Hat Hummingbird,
   SecureOS). Those sources are not wired up. No admin token and no Access JWT.
-- It does not store a lockfile. The MCP `check_stack` tool returns findings only. Posting a
-  lockfile to `/api/v1/stack` creates a public report; the skills do that only when you ask.
+- It does not keep a copy of a lockfile. See "What gets sent" above.
 
 ## License
 

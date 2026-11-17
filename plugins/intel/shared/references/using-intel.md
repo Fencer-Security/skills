@@ -37,9 +37,10 @@ Ecosystems: `npm`, `pypi`, `go`, `maven`, `crates.io`, `packagist`, `rubygems`, 
 `github-actions`, `pub`, `swift`, `hackage`, `ghc`, `cran`, `opam`, `julia`, `bitnami`.
 
 `check_stack` reads a lockfile or SBOM (`lockfile` plus `filename`) or exact versions (`packages`:
-`ecosystem`, `name`, `version`). It does not store a report. `POST /api/v1/stack` does store a
-public unlisted report. Do not POST a lockfile or SBOM there unless the user explicitly wants that
-public report.
+`ecosystem`, `name`, `version`). The text is sent to https://intel.fencer.dev. The call does not
+store a report. Say that once before the first `check_stack` call. A file read from the workspace is
+sent only when the user asked for this lookup. `POST /api/v1/stack` does store a public unlisted
+report. Do not POST a lockfile or SBOM there unless the user explicitly wants that public report.
 
 ## If the MCP tools are not available
 
