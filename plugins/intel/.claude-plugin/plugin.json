@@ -1,0 +1,22 @@
+{
+  "name": "intel",
+  "description": "Look up CVEs, KEV, EPSS, and package fixes on the public Fencer Intel feed (intel.fencer.dev) over MCP.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Fencer",
+    "url": "https://fencer.dev"
+  },
+  "homepage": "https://github.com/Fencer-Security/skills/tree/main/plugins/intel",
+  "license": "Apache-2.0",
+  "keywords": [
+    "intel",
+    "vulnerabilities",
+    "cve",
+    "ghsa",
+    "osv",
+    "kev",
+    "epss",
+    "mcp"
+  ],
+  "mcpServers": "./.mcp.json"
+}

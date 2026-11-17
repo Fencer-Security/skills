@@ -1,0 +1,35 @@
+{
+  "recorded": "2026-11-17",
+  "source": "POST https://intel.fencer.dev/mcp tools/list",
+  "url": "https://intel.fencer.dev/mcp",
+  "tools": [
+    {
+      "name": "search",
+      "arguments": [
+        "q",
+        "severity",
+        "kev",
+        "exploited",
+        "tech",
+        "ecosystem",
+        "vendor",
+        "package",
+        "published",
+        "type",
+        "limit"
+      ]
+    },
+    {
+      "name": "get_vulnerability",
+      "arguments": ["id"]
+    },
+    {
+      "name": "list_feed",
+      "arguments": ["filter", "tech", "ecosystem", "vendor", "limit", "cursor"]
+    },
+    {
+      "name": "check_stack",
+      "arguments": ["lockfile", "filename", "packages"]
+    }
+  ]
+}
