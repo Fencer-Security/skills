@@ -16,6 +16,11 @@
       "name": "compliance",
       "source": "./plugins/compliance",
       "description": "SOC 2 review skills — vendor diligence and self-review readiness assessments, calibrated to reviewer perspective."
+    },
+    {
+      "name": "intel",
+      "source": "./plugins/intel",
+      "description": "Public vulnerability intel from intel.fencer.dev — CVE triage, dependency lookup, and recent-vuln briefs over the Fencer Intel MCP server."
     }
   ]
 }

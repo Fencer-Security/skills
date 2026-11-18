@@ -8,6 +8,7 @@ Public marketplace of [Claude Code](https://code.claude.com) and [Codex](https:/
 | --- | --- |
 | [`vibe-app-audit`](plugins/vibe-app-audit/) | Security audit skills for AI-generated web apps (Lovable, v0, Bolt, Cursor output). |
 | [`compliance`](plugins/compliance/) | SOC 2 vendor diligence and related compliance review skills. |
+| [`intel`](plugins/intel/) | CVE triage, dependency lookup, and recent-vuln briefs on the public Fencer Intel feed. |
 
 ## Install
 

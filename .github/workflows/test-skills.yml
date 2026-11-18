@@ -34,6 +34,17 @@ jobs:
                   done
                   exit $fail
 
+    intel-plugin:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: astral-sh/setup-uv@v3
+              with:
+                  enable-cache: true
+            - run: uv sync
+            - name: Test the intel plugin against the recorded MCP contract
+              run: uv run pytest tests/test_intel_plugin.py
+
     typescript-scripts:
         runs-on: ubuntu-latest
         steps:
