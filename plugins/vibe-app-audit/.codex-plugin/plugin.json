@@ -2,6 +2,8 @@
   "name": "vibe-app-audit",
   "description": "Security audit skills for vibe-coded projects — user-facing webapps, mobile apps, backend services, chat bots, scripts, and MCP servers / AI agents.",
   "version": "0.2.0",
+  "icon": "./.claude-plugin/icon.png",
+  "privacyPolicyUrl": "https://www.fencer.dev/privacy-policy",
   "author": {
     "name": "Fencer",
     "url": "https://fencer.dev"

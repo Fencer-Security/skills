@@ -1,7 +1,7 @@
 ---
 name: vibe-service-audit
 description: Audit a vibe-coded backend service, webhook handler, ingestion job, or integration and produce a severity-tagged markdown report. Use when the user wants to security-review a non-user-facing service — "audit my Stripe webhook," "review my ingestion job," "is my integration secure," "audit this Lambda." Covers webhook signature verification (HMAC/JWS, Stripe/GitHub/Shopify/Twilio), API key and OAuth token handling, outbound-call TLS, data egress, idempotency / replay protection, and job-trigger auth, on top of the shared baseline. Runs safe live probes against a webhook or API base URL (unsigned/tampered/replayed/malformed) and asks before intrusive probes.
-allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(gitleaks:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(bundle-audit:*) Bash(govulncheck:*) Bash(openssl:*) Bash(python3:*) Bash(node:*) Bash(brew install gitleaks) Bash(go install github.com/gitleaks/gitleaks/v8@latest) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(gem install --user-install bundler-audit) Bash(go install golang.org/x/vuln/cmd/govulncheck@latest) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+allowed-tools: Read Grep Glob
 ---
 
 # Vibe-coded backend service security audit

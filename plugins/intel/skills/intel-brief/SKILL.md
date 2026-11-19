@@ -1,7 +1,7 @@
 ---
 name: intel-brief
 description: Brief newly published or newly CISA KEV vulnerabilities from the public Fencer Intel feed over a time window, optionally filtered to a technology, ecosystem, vendor, or package. Use when the user asks what vulns dropped recently, what just entered KEV, or how to watch a stack for new ones. Cites https://intel.fencer.dev/<id>, gives the matching feed URL, and does not invent entries the lookup did not return.
-allowed-tools: Read WebFetch(domain:intel.fencer.dev)
+allowed-tools: Read
 ---
 
 # Brief recent vulnerabilities

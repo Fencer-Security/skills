@@ -95,7 +95,7 @@ If cleanup fails, the report says so loudly.
 
 ## 6 — Missing tools
 
-Live probes may need CLIs that aren't on `PATH` (`uvx`, `openssl`, `node`, etc.). Apply the
+Live probes may need CLIs that aren't on `PATH` (`openssl`, `node`, etc.). Apply the
 **install-and-continue protocol** from `$SHARED_DIR/references/baseline.md`: tell the user what's
 missing, show the canonical install command, ask before installing, and skip the affected probes
 (not the whole audit) on decline. Record skipped probes in the report's "Gaps in this audit"

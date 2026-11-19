@@ -1,7 +1,9 @@
 {
-  "name": "intel",
+  "name": "fencer-intel",
   "description": "Look up CVEs, KEV, EPSS, and package fixes on the public Fencer Intel feed (intel.fencer.dev) over MCP.",
   "version": "0.1.0",
+  "icon": "./.claude-plugin/icon.png",
+  "privacyPolicyUrl": "https://www.fencer.dev/privacy-policy",
   "author": {
     "name": "Fencer",
     "url": "https://fencer.dev"

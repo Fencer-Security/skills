@@ -1,7 +1,7 @@
 ---
 name: intel-triage
 description: Triage a CVE, GHSA, or OSV id against the public Fencer Intel feed. Use when the user asks how severe a vulnerability is, whether it is in CISA KEV, what its EPSS score is, or which version fixes it. Pulls the record, KEV status, EPSS, severity, public exploits, and fixed versions, then gives a short priority. Cites https://intel.fencer.dev/<id> and says the feed has no entry instead of inventing one.
-allowed-tools: Read WebFetch(domain:intel.fencer.dev)
+allowed-tools: Read
 ---
 
 # Triage a vulnerability

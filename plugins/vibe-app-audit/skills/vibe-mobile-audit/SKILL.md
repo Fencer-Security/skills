@@ -1,7 +1,7 @@
 ---
 name: vibe-mobile-audit
 description: Audit a vibe-coded mobile app (Expo, React Native, native iOS / Android, occasionally Flutter) and produce a severity-tagged markdown report. Use when the user wants to security-review a mobile app — "audit my Expo app," "review my React Native app," "is this iOS app safe," "check my Android app." Covers secret storage (Keychain/Keystore vs UserDefaults/SharedPreferences/AsyncStorage), network security (ATS, NetworkSecurityConfig, cert pinning), deep links / URL schemes / intent filters, WebView and JS bridges, permissions, and backup-included data, on top of the shared baseline. Runs safe live probes against the backend API and inspects built IPA/APK for embedded secrets.
-allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(gitleaks:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(plutil:*) Bash(xmllint:*) Bash(unzip:*) Bash(file:*) Bash(strings:*) Bash(brew install gitleaks) Bash(go install github.com/gitleaks/gitleaks/v8@latest) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+allowed-tools: Read Grep Glob
 ---
 
 # Vibe-coded mobile app security audit
@@ -224,7 +224,7 @@ A WebView with a JS-to-native bridge is a category of RCE if untrusted content c
 | ------------------------------------------------------------------------------------------------------------ | ------------ |
 | `addJavascriptInterface` / `WKScriptMessageHandler` exposing native I/O / shell, AND remote-loadable WebView | **Critical** |
 | WebView loading user-supplied / attacker-influenceable URLs                                                  | **High**     |
-| React Native `onMessage` handler that `eval`s or routes by message data                                      | **High**     |
+| React Native `onMessage` handler that executes message data as code or routes by it                          | **High**     |
 | `UIWebView` on iOS (deprecated, removed in iOS 12+)                                                          | **Medium**   |
 
 **Find the surface:**

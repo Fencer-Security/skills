@@ -1,7 +1,7 @@
 ---
 name: intel-check-deps
 description: Look up known vulnerabilities and fixed versions for a package list, lockfile excerpt, or SBOM on the public Fencer Intel feed. Use when the user pastes dependencies, a lockfile, or an SBOM and asks which vulns affect those versions or what to upgrade to. Sends that list to https://intel.fencer.dev. This is a feed lookup, not a full scanner. Cites https://intel.fencer.dev/<id> and reports an empty result when the feed returns no matches.
-allowed-tools: Read WebFetch(domain:intel.fencer.dev)
+allowed-tools: Read
 ---
 
 # Check dependencies against the public feed

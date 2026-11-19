@@ -1,7 +1,7 @@
 ---
 name: vibe-webapp-audit
 description: Audit a vibe-coded user-facing web app (Lovable, v0, Bolt, Replit, Cursor) and produce a severity-tagged markdown report. Use when the user wants to security-review a generated web app with a UI and backend — "audit my Lovable app," "is my Bolt export safe," "review my Supabase setup," "find the security issues in this Next.js project." Covers Supabase RLS and plain-Postgres access controls, server-side input validation vs browser-only, IDOR on REST routes, and security headers, on top of the shared baseline (gitleaks, SAST, deps, monitoring). Runs safe live probes against a deployed URL (anonymous reads, header probes, error-page leakage) and asks before intrusive probes.
-allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(gitleaks:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(bundle-audit:*) Bash(govulncheck:*) Bash(brew install gitleaks) Bash(go install github.com/gitleaks/gitleaks/v8@latest) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(gem install --user-install bundler-audit) Bash(go install golang.org/x/vuln/cmd/govulncheck@latest) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+allowed-tools: Read Grep Glob
 ---
 
 # Vibe-coded web app security audit

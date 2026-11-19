@@ -1,7 +1,7 @@
 ---
 name: vibe-audit
 description: Classify a vibe-coded project (Lovable, Bolt, v0, Replit, Cursor) and recommend which category audit skill(s) to run. Use when the user's request is generic ("audit my project," "what audit should I run," "audit this repo") or when the repo plausibly contains multiple categories. Detects user-facing webapps, mobile apps (Expo/React Native/iOS/Android), backend services / webhook handlers, chat bots (Slack/Discord/GitHub), CLI scripts, and MCP servers / AI agents. Recommends `vibe-webapp-audit`, `vibe-mobile-audit`, `vibe-service-audit`, `vibe-bot-audit`, `vibe-script-audit`, or `vibe-mcp-agent-audit` with rationale. Classifies and points only — does not perform audits.
-allowed-tools: Read Grep Glob Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(find:*) Bash(grep:*)
+allowed-tools: Read Grep Glob
 ---
 
 # Vibe-coded project classifier
