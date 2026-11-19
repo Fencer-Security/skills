@@ -5,7 +5,7 @@
   "icon": "./.claude-plugin/icon.png",
   "privacyPolicyUrl": "https://www.fencer.dev/privacy-policy",
   "termsOfServiceUrl": "https://www.fencer.dev/terms-of-use",
-  "supportUrl": "https://github.com/Fencer-Security/skills/issues",
+  "supportUrl": "mailto:support@fencer.dev",
   "documentationUrl": "https://github.com/Fencer-Security/skills/tree/main/plugins/intel",
   "repository": "https://github.com/Fencer-Security/skills",
   "author": {
