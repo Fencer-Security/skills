@@ -15,7 +15,7 @@ SOC 2 review skills — vendor diligence and self-review readiness assessments. 
 
 ```
 /plugin marketplace add https://github.com/Fencer-Security/skills
-/plugin install compliance@fencer
+/plugin install fencer-compliance@fencer
 ```
 
 ## License

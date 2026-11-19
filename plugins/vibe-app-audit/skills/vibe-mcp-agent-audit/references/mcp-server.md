@@ -122,8 +122,8 @@ Flag:
 - A tool that reads environment variables and returns them. **Critical** (designed-in leak).
 - A tool that reads a credentials file and returns its contents to the LLM. **Critical**.
 - A tool that fetches a URL and returns the full response — if the URL is server-controlled (e.g.,
-  `http://169.254.169.254/`), this reveals cloud-instance metadata including IAM credentials.
-  **High** (SSRF + metadata service).
+  the cloud metadata service on its link-local address), this reveals cloud-instance metadata
+  including IAM credentials. **High** (SSRF + metadata service).
 
 ## Step 6 — Resource / authorization
 

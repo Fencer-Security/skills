@@ -13,12 +13,12 @@
       "description": "Security audit skills for vibe-coded projects — webapps, mobile apps, services, bots, scripts, MCP/agent."
     },
     {
-      "name": "compliance",
+      "name": "fencer-compliance",
       "source": "./plugins/compliance",
       "description": "SOC 2 review skills — vendor diligence and self-review readiness assessments, calibrated to reviewer perspective."
     },
     {
-      "name": "intel",
+      "name": "fencer-intel",
       "source": "./plugins/intel",
       "description": "Public vulnerability intel from intel.fencer.dev — CVE triage, dependency lookup, and recent-vuln briefs over the Fencer Intel MCP server."
     }

@@ -27,7 +27,7 @@ brief. Slack can subscribe with `/feed subscribe <url>`.
 
 ```
 /plugin marketplace add https://github.com/Fencer-Security/skills
-/plugin install intel@fencer
+/plugin install fencer-intel@fencer
 /reload-plugins
 ```
 

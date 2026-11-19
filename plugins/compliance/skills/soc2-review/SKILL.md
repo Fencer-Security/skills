@@ -1,7 +1,7 @@
 ---
 name: soc2-review
 description: Review and assess a SOC 2 Type 1 or Type 2 report — either a vendor's report for procurement diligence, or your own report to prepare for customer reviews. Calibrates expectations against the reviewer's industry, size, stage, and well-known procurement standards. Use whenever the user shares a SOC 2 report (PDF, attestation letter, bridge letter) along with any context — "review this vendor's SOC 2," "how would a bank evaluate our SOC 2," "review our own SOC 2 before we send it to prospects," or "diligence this vendor's SOC 2 for me." Also trigger for related requests where a SOC 2 is the primary artifact — gap analysis, peer-cohort comparison, readiness assessment, drafting follow-up questions, or producing a write-up to share with stakeholders. Produces a structured markdown report with risk-rated findings, a recommendation, and actionable next steps.
-allowed-tools: Read Write Glob Grep
+allowed-tools: Read Glob Grep
 ---
 
 # SOC 2 Review

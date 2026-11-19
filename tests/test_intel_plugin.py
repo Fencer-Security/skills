@@ -48,7 +48,7 @@ def test_manifests_match_and_point_at_mcp_json() -> None:
     codex = (PLUGIN / ".codex-plugin" / "plugin.json").read_text()
     assert claude == codex
     manifest = json.loads(claude)
-    assert manifest["name"] == "intel"
+    assert manifest["name"] == "fencer-intel"
     assert manifest["license"] == "Apache-2.0"
     assert manifest["mcpServers"] == "./.mcp.json"
     assert manifest["version"] == "0.1.0"
@@ -56,7 +56,7 @@ def test_manifests_match_and_point_at_mcp_json() -> None:
 
 def test_marketplace_and_readme_list_the_plugin() -> None:
     market = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text())
-    entry = next(plugin for plugin in market["plugins"] if plugin["name"] == "intel")
+    entry = next(plugin for plugin in market["plugins"] if plugin["name"] == "fencer-intel")
     assert entry["source"] == "./plugins/intel"
     assert "plugins/intel/" in (ROOT / "README.md").read_text()
 
@@ -89,7 +89,7 @@ def test_skills_stay_on_the_public_surface() -> None:
         assert "intel.fencer.dev" in text
         assert "using-intel.md" in text
         assert "Sources" in text
-        assert frontmatter["allowed-tools"] == "Read WebFetch(domain:intel.fencer.dev)"
+        assert frontmatter["allowed-tools"] == "Read"
 
 
 def test_recorded_tool_contract_is_documented() -> None:

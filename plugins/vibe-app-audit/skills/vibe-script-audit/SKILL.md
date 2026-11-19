@@ -1,7 +1,7 @@
 ---
 name: vibe-script-audit
 description: Audit a vibe-coded script or CLI tool (one-shot Python/TypeScript/Bash run locally or as cron) and produce a severity-tagged markdown report. Use when the user wants to security-review a script — "audit my migration script," "review this cron job," "is this CLI safe to run," "audit this bash script." Covers argument handling, subprocess and shell-out (command injection, `shell=True`), file I/O (path traversal, symlinks), credential file hygiene, network TLS, and blast radius, on top of the shared baseline. Runs safe live probes in an isolated tmpdir (path-traversal args, shell metachars, bad credfile) and asks before exercising the main path.
-allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(stat:*) Bash(gitleaks:*) Bash(opengrep:*) Bash(semgrep:*) Bash(pip-audit:*) Bash(bundle-audit:*) Bash(govulncheck:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(mktemp:*) Bash(chmod:*) Bash(brew install gitleaks) Bash(go install github.com/gitleaks/gitleaks/v8@latest) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(gem install --user-install bundler-audit) Bash(go install golang.org/x/vuln/cmd/govulncheck@latest) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+allowed-tools: Read Grep Glob
 ---
 
 # Vibe-coded script security audit
@@ -69,7 +69,7 @@ SHARED_DIR="$SKILL_DIR/../../shared"
 # Entry points
 grep -lE 'if __name__ == .__main__.' --include="*.py" -r . | head -10
 find . -maxdepth 3 -name "*.sh" -not -path "*/node_modules/*" | head -10
-grep -lE '#!/usr/bin/env' . -r 2>/dev/null | head -10
+grep -lE '^#!' . -r 2>/dev/null | head -10
 
 # CLI parsing libraries
 grep -hE "(argparse|click|typer|fire)" --include="*.py" -r . | head -5
@@ -85,12 +85,12 @@ not the _source_.
 
 **Patterns to flag** (severity from the sink, not the source):
 
-| Pattern                                                         | Severity     |
-| --------------------------------------------------------------- | ------------ |
-| Argument concatenated into shell command (see §2)               | **Critical** |
-| Argument used as URL the script then `eval`s or shells out with | **Critical** |
-| Argument-supplied file path without `realpath` + containment    | **High**     |
-| No `--help` text on destructive flags                           | **Low** (UX) |
+| Pattern                                                                  | Severity     |
+| ------------------------------------------------------------------------ | ------------ |
+| Argument concatenated into shell command (see §2)                        | **Critical** |
+| Argument used as URL the script then executes as code or shells out with | **Critical** |
+| Argument-supplied file path without `realpath` + containment             | **High**     |
+| No `--help` text on destructive flags                                    | **Low** (UX) |
 
 **Find the surface:**
 
@@ -114,7 +114,7 @@ boundary; list-form bypasses it.
 | ----------------------------------------------------- | ------------ |
 | `subprocess.run(..., shell=True)` with any user input | **Critical** |
 | `exec()` / `execSync()` with string concatenation     | **Critical** |
-| Bash `eval` of user input                             | **Critical** |
+| Bash executing user input as code                     | **Critical** |
 | Unquoted variables in shell commands (`rm $path`)     | **High**     |
 
 **Safe patterns** (confirm and don't flag):
@@ -128,7 +128,7 @@ boundary; list-form bypasses it.
 grep -rnE "subprocess\.(run|call|Popen|check_output)|os\.(system|popen)" --include="*.py" . | head -30
 grep -rnE "shell=True" --include="*.py" . | head -20
 grep -rnE "(exec|execSync|spawn|spawnSync|child_process)" --include="*.{ts,js}" . | head -20
-grep -rnE 'eval|\$\(' --include="*.sh" . | head -20
+grep -rnE '[e]val|\$\(' --include="*.sh" . | head -20
 ```
 
 ## 3 — File I/O

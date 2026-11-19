@@ -1,7 +1,7 @@
 ---
 name: vibe-bot-audit
 description: Audit a vibe-coded chat bot (Slack, Discord, GitHub App, Microsoft Teams) and produce a severity-tagged markdown report. Use when the user wants to security-review a bot — "audit my Slack bot," "review my Discord bot," "is this GitHub App safe," "check my Teams bot." Covers platform signature verification (Slack signing secret, Discord ed25519, GitHub HMAC-SHA256), OAuth scope minimization, token storage, command and mention handling (never trusting user-supplied identity), and prompt injection for LLM-forwarded bots, on top of the shared baseline. Runs safe live probes against the bot endpoint (unsigned/replayed/outdated-timestamp rejection) and asks before intrusive probes.
-allowed-tools: Read Grep Glob Bash(grep:*) Bash(find:*) Bash(git ls-files:*) Bash(git log:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(curl:*) Bash(gitleaks:*) Bash(opengrep:*) Bash(semgrep:*) Bash(bun:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip-audit:*) Bash(openssl:*) Bash(python3:*) Bash(node:*) Bash(brew install gitleaks) Bash(go install github.com/gitleaks/gitleaks/v8@latest) Bash(uv tool install opengrep) Bash(uv tool install semgrep) Bash(uv tool install pip-audit) Bash(brew install opengrep) Bash(brew install semgrep) Bash(command -v:*) Bash(which:*)
+allowed-tools: Read Grep Glob
 ---
 
 # Vibe-coded chat bot security audit
@@ -170,7 +170,7 @@ The headline failure mode: trusting input from the chat platform as if it were a
   the bot needs to act _as_ a user, it must consult the platform API (Slack's `users.info`,
   GitHub's API) with the real user's token.
 - A slash command's `user_id` field is set by the platform and is fine; but `text` is free-form
-  user input — never `eval`, `shell out`, or pass directly to a query.
+  user input — never run it as code, shell out with it, or pass it directly to a query.
 - For bots that interpret natural language, the model must treat message content as untrusted
   data, never as instructions (see prompt-injection in section 5).
 

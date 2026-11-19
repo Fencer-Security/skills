@@ -24,9 +24,9 @@ user has iCloud backup on. The Keychain exists for exactly this purpose. **Sever
 stored value is a credential.
 
 **NEVER use `evaluateJavaScript` with a string composed from any data not under your sole control**
-(user input, network responses, file contents). It's `eval` for native, exposing the JS context (and
-therefore message handlers, and therefore native methods) to whoever influenced the string.
-**Severity: Critical**.
+(user input, network responses, file contents). It runs a string as code in the page, exposing the
+JS context (and therefore message handlers, and therefore native methods) to whoever influenced the
+string. **Severity: Critical**.
 
 ## Step 2 — Keychain vs UserDefaults
 
