@@ -42,7 +42,10 @@ plugins/<plugin-name>/
    if the helper has runtime npm dependencies.
 4. **Reference scripts portably.** Use `${CLAUDE_SKILL_DIR:-${SKILL_DIR}}` so the same `SKILL.md`
    works in Claude Code and Codex.
-5. **External tools (`fencer`, `gh`, etc.) are checked, not bundled.** A skill should
+5. **`allowed-tools` stays at `Read Grep Glob LS`.** No `Bash(...)`, `Write` or `WebFetch(...)`
+   grants; the plugin directory rejects them. See the plugin directory checks in
+   [AGENTS.md](AGENTS.md).
+6. **External tools (`fencer`, `gh`, etc.) are checked, not bundled.** A skill should
    `command -v <tool>` and tell the user how to install it if missing.
 
 ## License

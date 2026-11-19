@@ -46,12 +46,43 @@ Then:
 ---
 name: my-skill
 description: One-line trigger description in third person, mentions when to use.
-allowed-tools: Bash Read Grep
+allowed-tools: Read Grep Glob
 ---
 ```
 
 `description` should read as a trigger — when an agent reads it, they should immediately know
 whether this skill applies. Keep it under 1024 chars.
+
+`allowed-tools` is limited to `Read`, `Grep`, `Glob` and `LS`. The Claude plugin directory rejects
+any other entry (`Bash(...)`, `Write`, `WebFetch(...)`) unless the publisher is a Verified
+organization. A skill that shells out gets a permission prompt per call instead.
+
+### Plugin directory checks
+
+The Claude plugin directory scans every file in a plugin, including prose. Keep these in mind:
+
+- **Names:** prefix plugin names with `fencer-` (`fencer-intel`). A bare generic name like `intel`
+  is held for resembling another listing.
+- **Manifest:** set `icon` (512–2048 px square PNG) and the link fields below in
+  `.claude-plugin/plugin.json`. Keep `.codex-plugin/plugin.json` identical (a test enforces it for
+  `intel`).
+
+    | Field               | Value                                                 |
+    | ------------------- | ----------------------------------------------------- |
+    | `privacyPolicyUrl`  | `https://www.fencer.dev/privacy-policy`               |
+    | `termsOfServiceUrl` | `https://www.fencer.dev/terms-of-use`                 |
+    | `supportUrl`        | `mailto:support@fencer.dev`                           |
+    | `repository`        | `https://github.com/Fencer-Security/skills`           |
+    | `documentationUrl`  | the plugin's directory on GitHub (same as `homepage`) |
+
+    Vulnerability reports go to `security@fencer.dev` (see `SECURITY.md`), not the support address.
+
+- **Icons:** save them uncompressed (`compress_level=0`, 256-colour palette). The scanner reads a
+  PNG's bytes as text, and compressed pixel data can match its download-and-run pattern by chance.
+- **Wording:** avoid the literal words `eval` and `uvx` in skill prose; the scanner reads them as
+  download-and-run. Say "run it as code" instead. A grep that needs to find `eval` can use `[e]val`.
+- **Credentials:** don't spell out a metadata-service IP or `#!/usr/bin/env` in examples. Describe
+  them instead.
 
 ### Script portability
 
