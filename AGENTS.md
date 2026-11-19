@@ -63,9 +63,20 @@ The Claude plugin directory scans every file in a plugin, including prose. Keep 
 
 - **Names:** prefix plugin names with `fencer-` (`fencer-intel`). A bare generic name like `intel`
   is held for resembling another listing.
-- **Manifest:** set `icon` (512–2048 px square PNG), `privacyPolicyUrl`, `termsOfServiceUrl`,
-  `supportUrl`, `documentationUrl` and `repository` in `.claude-plugin/plugin.json`. Keep
-  `.codex-plugin/plugin.json` identical (a test enforces it for `intel`).
+- **Manifest:** set `icon` (512–2048 px square PNG) and the link fields below in
+  `.claude-plugin/plugin.json`. Keep `.codex-plugin/plugin.json` identical (a test enforces it for
+  `intel`).
+
+    | Field               | Value                                                 |
+    | ------------------- | ----------------------------------------------------- |
+    | `privacyPolicyUrl`  | `https://www.fencer.dev/privacy-policy`               |
+    | `termsOfServiceUrl` | `https://www.fencer.dev/terms-of-use`                 |
+    | `supportUrl`        | `mailto:support@fencer.dev`                           |
+    | `repository`        | `https://github.com/Fencer-Security/skills`           |
+    | `documentationUrl`  | the plugin's directory on GitHub (same as `homepage`) |
+
+    Vulnerability reports go to `security@fencer.dev` (see `SECURITY.md`), not the support address.
+
 - **Icons:** save them uncompressed (`compress_level=0`, 256-colour palette). The scanner reads a
   PNG's bytes as text, and compressed pixel data can match its download-and-run pattern by chance.
 - **Wording:** avoid the literal words `eval` and `uvx` in skill prose; the scanner reads them as
